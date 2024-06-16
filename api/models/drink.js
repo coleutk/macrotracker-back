@@ -18,4 +18,5 @@ const drinkSchema = mongoose.Schema({
     fats: {type: Number, required: false, default: 0} // Fat per serving (g)
 });
 
+// Drink Schema
 module.exports = mongoose.model('Drink', drinkSchema);

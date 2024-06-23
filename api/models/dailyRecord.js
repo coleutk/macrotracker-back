@@ -9,7 +9,7 @@ const dailyRecordSchema = mongoose.Schema({
     calories: { type: Number, default: 0 },
     protein: { type: Number, default: 0 },
     carbs: { type: Number, default: 0 },
-    fats: { type: Number, default: 0 }
+    fat: { type: Number, default: 0 }
 });
 
 module.exports = mongoose.model('DailyRecord', dailyRecordSchema);

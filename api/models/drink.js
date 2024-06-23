@@ -15,7 +15,7 @@ const drinkSchema = mongoose.Schema({
     calories: {type: Number, required: true}, // Calories per serving
     protein: {type: Number, required: false, default: 0}, // Protein per serving (g)
     carbs: {type: Number, required: false, default: 0}, // Carbohydrates per serving (g)
-    fats: {type: Number, required: false, default: 0} // Fat per serving (g)
+    fat: {type: Number, required: false, default: 0} // Fat per serving (g)
 });
 
 // Drink Schema

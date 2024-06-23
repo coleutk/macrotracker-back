@@ -15,18 +15,9 @@ exports.drinks_get_all = (req, res, next) => {
                         name: doc.name,
                         volume: doc.volume,
                         calories: doc.calories,
-                        protein: {
-                            value: doc.protein,
-                            unit: 'g'
-                        },
-                        carbs: {
-                            value: doc.carbs,
-                            unit: 'g'
-                        },
-                        fat: {
-                            value: doc.fat,
-                            unit: 'g'
-                        },
+                        protein: doc.protein,
+                        carbs: doc.carbs,
+                        fat: doc.fat,
                         request: {
                             type: 'GET',
                             url: 'http://localhost:3000/drinks/' + doc._id

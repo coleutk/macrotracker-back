@@ -7,6 +7,7 @@ exports.foods_get_all = (req, res, next) => {
         .select('_id name weight calories carbs protein fat')
         .exec()
         .then(docs => {
+            console.log(docs);
             const response = {
                 count: docs.length,
                 foods: docs.map(doc => {
@@ -15,22 +16,13 @@ exports.foods_get_all = (req, res, next) => {
                         name: doc.name,
                         weight: doc.weight,
                         calories: doc.calories,
-                        protein: {
-                            value: doc.protein,
-                            unit: 'g'
-                        },
-                        carbs: {
-                            value: doc.carbs,
-                            unit: 'g'
-                        },
-                        fat: {
-                            value: doc.fat,
-                            unit: 'g'
-                        },
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:3000/foods/' + doc._id
-                        }
+                        protein: doc.protein,
+                        carbs: doc.carbs,
+                        fat: doc.fat
+                        // request: {
+                        //     type: 'GET',
+                        //     url: 'http://localhost:3000/foods/' + doc._id
+                        // }
                     }
                 })
             };

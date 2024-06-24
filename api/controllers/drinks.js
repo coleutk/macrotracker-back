@@ -17,11 +17,11 @@ exports.drinks_get_all = (req, res, next) => {
                         calories: doc.calories,
                         protein: doc.protein,
                         carbs: doc.carbs,
-                        fat: doc.fat,
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:3000/drinks/' + doc._id
-                        }
+                        fat: doc.fat
+                        // request: {
+                        //     type: 'GET',
+                        //     url: 'http://localhost:3000/drinks/' + doc._id
+                        // }
                     }
                 })
             };

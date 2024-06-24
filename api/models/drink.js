@@ -8,7 +8,7 @@ const drinkSchema = mongoose.Schema({
         unit: {
             type: String,
             required: true,
-            enum: ['mL', 'L', 'c', 'fl oz'], // Allowed units
+            enum: ['mL', 'L', 'c', 'oz'], // Allowed units
             default: 'mL'
         }
     },

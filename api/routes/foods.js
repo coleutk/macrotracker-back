@@ -40,10 +40,10 @@ router.get('/:foodId', checkAuth, FoodsController.foods_get_food);
     { "propName": "weight.unit", "value": "g" }
 ]
 */
-router.patch('/:foodId', checkAuth, FoodsController.foods_update_food);
+router.patch('/:foodId', FoodsController.foods_update_food);
 
 // Delete Food
-router.delete('/:foodId', checkAuth, FoodsController.foods_delete_food);
+router.delete('/:foodId', FoodsController.foods_delete_food);
 
 
 module.exports = router;

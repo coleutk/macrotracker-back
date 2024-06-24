@@ -5,7 +5,7 @@ const checkAuth = require('../middleware/check-auth');
 const DrinksController = require('../controllers/drinks');
 
 // Get all Drinks
-router.get('/', checkAuth, DrinksController.drinks_get_all);
+router.get('/', DrinksController.drinks_get_all);
 
 // Add new Drink
 /* Template for JSON raw body:
@@ -13,7 +13,7 @@ router.get('/', checkAuth, DrinksController.drinks_get_all);
     "name": "Drink",
     "volume": {
         "value": 150,
-        "unit": "fl oz"
+        "unit": "oz"
     },
     "calories": 52,
     "protein": 0.3,
@@ -21,7 +21,7 @@ router.get('/', checkAuth, DrinksController.drinks_get_all);
     "fat": 0.2
 }
 */
-router.post('/', checkAuth, DrinksController.drinks_create_drink);
+router.post('/', DrinksController.drinks_create_drink);
 
 // Get Drink by id
 router.get('/:drinkId', checkAuth, DrinksController.drinks_get_drink);
@@ -37,13 +37,13 @@ router.get('/:drinkId', checkAuth, DrinksController.drinks_get_drink);
 /* To change 'unit' WITHIN 'volume' for example:
 [
     { "propName": "volume.value", "value": 500 },
-    { "propName": "volume.unit", "value": "ml" }
+    { "propName": "volume.unit", "value": "L" }
 ]
 */
-router.patch('/:drinkId', checkAuth, DrinksController.drinks_update_drink);
+router.patch('/:drinkId', DrinksController.drinks_update_drink);
 
 // Delete Drink
-router.delete('/:drinkId', checkAuth, DrinksController.drinks_delete_drink);
+router.delete('/:drinkId', DrinksController.drinks_delete_drink);
 
 
 module.exports = router;

@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
+const Goal = require('../models/goal');
 
 exports.user_signup = (req, res, next) => {
     User.find({email: req.body.email})
@@ -107,3 +108,29 @@ exports.user_delete = (req, res, next) => {
             });
         });
 }
+
+// Mainly for retreiving selected goal
+exports.get_user = (req, res, next) => {
+    const userId = req.params.userId;
+
+    User.findById(userId)
+        .select('email selectedGoal')
+        .populate('selectedGoal') // Populate the selectedGoal with goal details
+        .exec()
+        .then(user => {
+            if (!user) {
+                return res.status(404).json({
+                    message: 'User not found'
+                });
+            }
+            res.status(200).json({
+                user: user
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
+};

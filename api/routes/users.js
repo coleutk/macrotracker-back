@@ -10,6 +10,8 @@ router.post('/login', UserController.user_login);
 
 router.delete('/:userId', checkAuth, UserController.user_delete);
 
+router.get('/:userId', UserController.get_user);
+
 // Note that if Auth is failing, you have to either sign up or sign in to a user
 // and fetch that specific token to put in front of "Bearer "
 // Then the auth should pass

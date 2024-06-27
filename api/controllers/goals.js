@@ -15,18 +15,9 @@ exports.goals_get_all = (req, res, next) => {
                         _id: doc._id,
                         name: doc.name,
                         calorieGoal: doc.calorieGoal,
-                        proteinGoal: {
-                            value: doc.proteinGoal,
-                            unit: 'g'
-                        },
-                        carbGoal: {
-                            value: doc.carbGoal,
-                            unit: 'g'
-                        },
-                        fatGoal: {
-                            value: doc.fatGoal,
-                            unit: 'g'
-                        },
+                        proteinGoal: doc.proteinGoal,
+                        carbGoal: doc.carbGoal,
+                        fatGoal: doc.fatGoal,
                         request: {
                             type: 'GET',
                             url: 'http://localhost:3000/goals/' + doc._id

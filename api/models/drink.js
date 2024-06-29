@@ -20,3 +20,4 @@ const drinkSchema = mongoose.Schema({
 
 // Drink Schema
 module.exports = mongoose.model('Drink', drinkSchema);
+module.exports.drinkSchema = drinkSchema; // Exporting the schema as well

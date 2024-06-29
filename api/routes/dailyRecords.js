@@ -8,40 +8,42 @@ const DailyRecord = require('../models/dailyRecord');
 const Food = require('../models/food');
 const Drink = require('../models/drink');
 
-router.post('/addFood', checkAuth, (req, res, next) => {
-    const userId = req.userData.userId;
-    const foodId = req.body.foodId;
+router.post('/addFood', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const food = {
+        name: req.body.name,
+        weight: {
+            value: req.body.weightValue,
+            unit: req.body.weightUnit
+        },
+        calories: req.body.calories,
+        protein: req.body.protein,
+        carbs: req.body.carbs,
+        fat: req.body.fat
+    };
 
     DailyRecord.findOneAndUpdate(
-        {userId: userId, date: {$gte: new Date().setHours(0, 0, 0, 0)}},
-        {$push: {foods: foodId}}, // Add food ID to list of foods
-        {new: true, upsert: true} // Create a new record if none exists, return updated document
+        { userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+        { 
+            $push: { foods: food }, // Add the detailed food entry
+            $inc: { // Increment the totals
+                calories: food.calories,
+                protein: food.protein,
+                carbs: food.carbs,
+                fat: food.fat
+            }
+        },
+        { new: true, upsert: true } // Create a new record if none exists, return updated document
     )
-    .then(record => {
-        Food.findById(foodId)
-            .then(food => {
-                // Update the record's nutritional values
-                record.calories += food.calories;
-                record.protein += food.protein;
-                record.carbs += food.carbs;
-                record.fats += food.fats;
-                return record.save();
-            })
-            .then(updatedRecord => {
-                res.status(200).json({
-                    updatedRecord
-                })
-            })
-            .catch(err => {
-                res.status(500).json({
-                    error: err
-                })
-            });
+    .then(updatedRecord => {
+        res.status(200).json({
+            updatedRecord
+        });
     })
     .catch(err => {
         res.status(500).json({
             error: err
-        })
+        });
     });
 });
 
@@ -100,8 +102,8 @@ router.post('/resetDailyRecord', checkAuth, (req, res, next) => {
     });
 });
 
-router.get('/currentDailyRecord', checkAuth, (req, res, next) => {
-    const userId = req.userData.userId;
+router.get('/currentDailyRecord', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
     
     DailyRecord.findOne({userId: userId, date: {$gte: new Date().setHours(0, 0, 0, 0)}})
         .populate('foods')

@@ -10,27 +10,31 @@ const Drink = require('../models/drink');
 
 router.post('/addFood', (req, res, next) => {
     const userId = '6653b47937963eb408615abc'; // Hardcoded for now
-    const food = {
-        name: req.body.name,
-        weight: {
-            value: req.body.weightValue,
-            unit: req.body.weightUnit
+    const dailyFood = {
+        food: {
+            _id: req.body._id,
+            name: req.body.name,
+            weight: {
+                value: req.body.weight.value,
+                unit: req.body.weight.unit
+            },
+            calories: req.body.calories,
+            protein: req.body.protein,
+            carbs: req.body.carbs,
+            fat: req.body.fat
         },
-        calories: req.body.calories,
-        protein: req.body.protein,
-        carbs: req.body.carbs,
-        fat: req.body.fat
+        servings: req.body.servings // Add the serving size here
     };
 
     DailyRecord.findOneAndUpdate(
         { userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
         { 
-            $push: { foods: food }, // Add the detailed food entry
+            $push: { foods: dailyFood }, // Add the daily food entry
             $inc: { // Increment the totals
-                calories: food.calories,
-                protein: food.protein,
-                carbs: food.carbs,
-                fat: food.fat
+                calories: dailyFood.food.calories,
+                protein: dailyFood.food.protein,
+                carbs: dailyFood.food.carbs,
+                fat: dailyFood.food.fat
             }
         },
         { new: true, upsert: true } // Create a new record if none exists, return updated document
@@ -47,39 +51,48 @@ router.post('/addFood', (req, res, next) => {
     });
 });
 
-router.post('/addDrink', checkAuth, (req, res, next) => {
-    const userId = req.userData.userId;
-    const drinkId = req.body.drinkId;
+
+router.post('/addDrink', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const dailyDrink = {
+        drink: {
+            _id: req.body._id,
+            name: req.body.name,
+            volume: {
+                value: req.body.volume.value,
+                unit: req.body.volume.unit
+            },
+            calories: req.body.calories,
+            protein: req.body.protein,
+            carbs: req.body.carbs,
+            fat: req.body.fat
+        },
+        servings: req.body.servings // Add the serving size here
+    };
 
     DailyRecord.findOneAndUpdate(
-        {userId: userId, date: {$gte: new Date().setHours(0, 0, 0, 0)}},
-        {$push: {drinks: drinkId}},
-        {new: true, upsert: true}
+        { userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+        { 
+            $push: { drinks: dailyDrink }, // Add the daily drink entry
+            $inc: { // Increment the totals
+                calories: dailyDrink.drink.calories,
+                protein: dailyDrink.drink.protein,
+                carbs: dailyDrink.drink.carbs,
+                fat: dailyDrink.drink.fat
+            }
+        },
+        { new: true, upsert: true } // Create a new record if none exists, return updated document
     )
-    .then(record => {
-        Drink.findById(drinkId)
-            .then(drink => {
-                record.calories += drink.calories;
-                record.protein += drink.protein;
-                record.carbs += drink.carbs;
-                record.fats += drink.fats;
-            })
-            .then(updatedRecord => {
-                res.status(200).json({
-                    updatedRecord
-                })
-            })
-            .catch(err => {
-                res.status(500).json({
-                    error: err
-                })
-            });
+    .then(updatedRecord => {
+        res.status(200).json({
+            updatedRecord
+        });
     })
     .catch(err => {
         res.status(500).json({
             error: err
-        })
-    }); 
+        });
+    });
 });
 
 router.post('/resetDailyRecord', checkAuth, (req, res, next) => {
@@ -108,6 +121,7 @@ router.get('/currentDailyRecord', (req, res, next) => {
     DailyRecord.findOne({userId: userId, date: {$gte: new Date().setHours(0, 0, 0, 0)}})
         .populate('foods')
         .populate('drinks')
+        .select('_id userId date calories protein carbs fat foods drinks')
         .exec()
         .then(record => {
             if(!record) {

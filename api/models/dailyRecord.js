@@ -28,3 +28,4 @@ const dailyRecordSchema = mongoose.Schema({
 });
 
 module.exports = mongoose.model('DailyRecord', dailyRecordSchema);
+module.exports.dailyRecordSchema = dailyRecordSchema; // Exporting the schema as well

@@ -14,6 +14,7 @@ const drinkRoutes = require('./api/routes/drinks');
 const goalsRoutes = require('./api/routes/goals');
 const goalRoutes = require('./api/routes/goal');
 const dailyRecordRoutes = require('./api/routes/dailyRecords');
+const archivedRecordRoutes = require('./api/routes/archivedRecords');
 
 mongoose.connect(
     'mongodb+srv://cratik:' + process.env.MONGO_ATLAS_PW + '@cluster0.j3iiz2z.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
@@ -58,6 +59,7 @@ app.use('/drinks', drinkRoutes);
 app.use('/goals', goalsRoutes);
 app.use('/goal', goalRoutes);
 app.use('/dailyRecords', dailyRecordRoutes);
+app.use('/archivedRecords', archivedRecordRoutes);
 
 app.use((req, res, next) => {
     const error = new Error('Not found');

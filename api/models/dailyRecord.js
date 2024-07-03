@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 
 const { foodSchema } = require('../models/food');
 const { drinkSchema } = require('../models/drink');
+const { manualSchema } = require('../models/manual')
 
 const dailyFoodSchema = new mongoose.Schema({
     food: { type: foodSchema, required: true },
@@ -19,6 +20,7 @@ const dailyRecordSchema = mongoose.Schema({
     date: { type: Date, default: Date.now, required: true },
     // foods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Food' }],
     // drinks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Drink' }],
+    manuals: [manualSchema],
     foods: [dailyFoodSchema], // Array of food entries
     drinks: [dailyDrinkSchema], // Array of drink entries
     calories: { type: Number, default: 0 },

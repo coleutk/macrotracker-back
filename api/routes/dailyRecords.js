@@ -96,6 +96,43 @@ router.post('/addDrink', (req, res, next) => {
     });
 });
 
+// For Adding Manual Macro Info
+router.post('/addManual', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const dailyManual = {
+        _id: new mongoose.Types.ObjectId(), // Generate a new ObjectId
+        calories: req.body.calories,
+        protein: req.body.protein,
+        carbs: req.body.carbs,
+        fat: req.body.fat
+    };
+
+    DailyRecord.findOneAndUpdate(
+        { userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+        { 
+            $push: { manuals: dailyManual }, // Add the daily manual entry
+            $inc: { // Increment the totals
+                calories: dailyManual.calories,
+                protein: dailyManual.protein,
+                carbs: dailyManual.carbs,
+                fat: dailyManual.fat
+            }
+        },
+        { new: true, upsert: true } // Create a new record if none exists, return updated document
+    )
+    .then(updatedRecord => {
+        res.status(200).json({
+            updatedRecord
+        });
+    })
+    .catch(err => {
+        res.status(500).json({
+            error: err
+        });
+    });
+});
+
+
 router.post('/resetDailyRecord', async (req, res, next) => {
     const userId = '6653b47937963eb408615abc'; // Hardcoded for now
 
@@ -147,7 +184,8 @@ router.get('/currentDailyRecord', (req, res, next) => {
     DailyRecord.findOne({userId: userId, date: {$gte: new Date().setHours(0, 0, 0, 0)}})
         .populate('foods')
         .populate('drinks')
-        .select('_id userId date calories protein carbs fat foods drinks')
+        .populate('manuals')
+        .select('_id userId date calories protein carbs fat manuals foods drinks')
         .exec()
         .then(record => {
             if(!record) {
@@ -264,6 +302,58 @@ router.delete('/deleteDrinkInput/:drinkInputId', (req, res, next) => {
             res.status(500).json({ error: err });
         });
 });
+
+
+router.delete('/deleteManualInput/:manualInputId', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const manualInputId = req.params.manualInputId;
+
+    console.log(`User ID: ${userId}`);
+    console.log(`Manual Input ID: ${manualInputId}`);
+
+    // Find the daily record for the current date
+    DailyRecord.findOne({ userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } })
+        .then(dailyRecord => {
+            if (!dailyRecord) {
+                console.log('No daily record found for today');
+                return res.status(404).json({ message: 'No daily record found for today' });
+            }
+
+            // Find the manual item to remove
+            const manualToRemove = dailyRecord.manuals.id(manualInputId);
+            if (!manualToRemove) {
+                console.log('Manual item not found');
+                return res.status(404).json({ message: 'Manual item not found' });
+            }
+
+            // Update the nutritional totals in the daily record
+            dailyRecord.calories -= manualToRemove.calories;
+            dailyRecord.protein -= manualToRemove.protein;
+            dailyRecord.carbs -= manualToRemove.carbs;
+            dailyRecord.fat -= manualToRemove.fat;
+
+            // Save the updated daily record with new nutritional totals
+            return dailyRecord.save();
+        })
+        .then(updatedRecord => {
+            console.log(`Updated Record: ${updatedRecord}`);
+            // Remove the manual item from the daily record
+            return DailyRecord.findOneAndUpdate(
+                { _id: updatedRecord._id },
+                { $pull: { manuals: { _id: manualInputId } } },
+                { new: true }
+            );
+        })
+        .then(finalRecord => {
+            console.log(`Final Record: ${finalRecord}`);
+            res.status(200).json(finalRecord);
+        })
+        .catch(err => {
+            console.log('Error processing request', err);
+            res.status(500).json({ error: err });
+        });
+});
+
 
 
 module.exports = router;

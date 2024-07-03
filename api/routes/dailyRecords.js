@@ -164,4 +164,106 @@ router.get('/currentDailyRecord', (req, res, next) => {
         });
 });
 
+router.delete('/deleteFoodInput/:foodInputId', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const foodInputId = req.params.foodInputId;
+
+    console.log(`User ID: ${userId}`);
+    console.log(`Food Input ID: ${foodInputId}`);
+
+    // Find the daily record for the current date
+    DailyRecord.findOne({ userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } })
+        .then(dailyRecord => {
+            if (!dailyRecord) {
+                console.log('No daily record found for today');
+                return res.status(404).json({ message: 'No daily record found for today' });
+            }
+
+            // Find the food item to remove
+            const foodToRemove = dailyRecord.foods.id(foodInputId);
+            if (!foodToRemove) {
+                console.log('Food item not found');
+                return res.status(404).json({ message: 'Food item not found' });
+            }
+
+            // Update the nutritional totals in the daily record
+            dailyRecord.calories -= foodToRemove.food.calories;
+            dailyRecord.protein -= foodToRemove.food.protein;
+            dailyRecord.carbs -= foodToRemove.food.carbs;
+            dailyRecord.fat -= foodToRemove.food.fat;
+
+            // Save the updated daily record with new nutritional totals
+            return dailyRecord.save();
+        })
+        .then(updatedRecord => {
+            console.log(`Updated Record: ${updatedRecord}`);
+            // Remove the food item from the daily record
+            return DailyRecord.findOneAndUpdate(
+                { _id: updatedRecord._id },
+                { $pull: { foods: { _id: foodInputId } } },
+                { new: true }
+            );
+        })
+        .then(finalRecord => {
+            console.log(`Final Record: ${finalRecord}`);
+            res.status(200).json(finalRecord);
+        })
+        .catch(err => {
+            console.log('Error processing request', err);
+            res.status(500).json({ error: err });
+        });
+});
+
+
+router.delete('/deleteDrinkInput/:drinkInputId', (req, res, next) => {
+    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const drinkInputId = req.params.drinkInputId;
+
+    console.log(`User ID: ${userId}`);
+    console.log(`Drink Input ID: ${drinkInputId}`);
+
+    // Find the daily record for the current date
+    DailyRecord.findOne({ userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } })
+        .then(dailyRecord => {
+            if (!dailyRecord) {
+                console.log('No daily record found for today');
+                return res.status(404).json({ message: 'No daily record found for today' });
+            }
+
+            // Find the drink item to remove
+            const drinkToRemove = dailyRecord.drinks.id(drinkInputId);
+            if (!drinkToRemove) {
+                console.log('Drink item not found');
+                return res.status(404).json({ message: 'Drink item not found' });
+            }
+
+            // Update the nutritional totals in the daily record
+            dailyRecord.calories -= drinkToRemove.drink.calories;
+            dailyRecord.protein -= drinkToRemove.drink.protein;
+            dailyRecord.carbs -= drinkToRemove.drink.carbs;
+            dailyRecord.fat -= drinkToRemove.drink.fat;
+
+            // Save the updated daily record with new nutritional totals
+            return dailyRecord.save();
+        })
+        .then(updatedRecord => {
+            console.log(`Updated Record: ${updatedRecord}`);
+            // Remove the drink item from the daily record
+            return DailyRecord.findOneAndUpdate(
+                { _id: updatedRecord._id },
+                { $pull: { drinks: { _id: drinkInputId } } },
+                { new: true }
+            );
+        })
+        .then(finalRecord => {
+            console.log(`Final Record: ${finalRecord}`);
+            res.status(200).json(finalRecord);
+        })
+        .catch(err => {
+            console.log('Error processing request', err);
+            res.status(500).json({ error: err });
+        });
+});
+
+
 module.exports = router;

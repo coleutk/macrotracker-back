@@ -13,7 +13,7 @@ router.post('/addFood', (req, res, next) => {
     const userId = '6653b47937963eb408615abc'; // Hardcoded for now
     const dailyFood = {
         food: {
-            _id: req.body._id,
+            _id: new mongoose.Types.ObjectId(),
             name: req.body.name,
             weight: {
                 value: req.body.weight.value,
@@ -57,7 +57,7 @@ router.post('/addDrink', (req, res, next) => {
     const userId = '6653b47937963eb408615abc'; // Hardcoded for now
     const dailyDrink = {
         drink: {
-            _id: req.body._id,
+            _id: new mongoose.Types.ObjectId(),
             name: req.body.name,
             volume: {
                 value: req.body.volume.value,
@@ -153,8 +153,10 @@ router.post('/resetDailyRecord', async (req, res, next) => {
             });
         }
 
-        // Add the current daily record to the archived records
-        archivedRecord.records.push(currentRecord);
+        // Add the current daily record to the archived records with a new unique ID
+        const newArchivedRecord = currentRecord.toObject();
+        newArchivedRecord._id = new mongoose.Types.ObjectId(); // Generate a new unique ID
+        archivedRecord.records.push(newArchivedRecord);
 
         // Save the archived record
         await archivedRecord.save();
@@ -162,7 +164,7 @@ router.post('/resetDailyRecord', async (req, res, next) => {
         // Reset the current daily record
         const resetRecord = await DailyRecord.findOneAndUpdate(
             { userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-            { $set: { foods: [], drinks: [], calories: 0, protein: 0, carbs: 0, fat: 0 } },
+            { $set: { foods: [], drinks: [], manuals: [], calories: 0, protein: 0, carbs: 0, fat: 0 } },
             { new: true, upsert: true }
         );
 
@@ -177,6 +179,7 @@ router.post('/resetDailyRecord', async (req, res, next) => {
         });
     }
 });
+
 
 router.get('/currentDailyRecord', (req, res, next) => {
     const userId = '6653b47937963eb408615abc'; // Hardcoded for now

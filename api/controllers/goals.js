@@ -4,7 +4,7 @@ const Goal = require('../models/goal');
 const User = require('../models/user');
 
 exports.goals_get_all = (req, res, next) => {
-    Goal.find()
+    Goal.find({ user: req.userData.userId })
         .select('_id name calorieGoal proteinGoal carbGoal fatGoal')
         .exec()
         .then(docs => {
@@ -43,7 +43,8 @@ exports.goals_create_goal = (req, res, next) => {
         calorieGoal: req.body.calorieGoal,
         proteinGoal: req.body.proteinGoal,
         carbGoal: req.body.carbGoal,
-        fatGoal: req.body.fatGoal
+        fatGoal: req.body.fatGoal,
+        user: req.userData.userId // Associate goal with the authenticated user
     });
 
     goal
@@ -124,7 +125,7 @@ exports.goals_update_goal = (req, res, next) => {
         updateOps[ops.propName] = ops.value;
     }
 
-    Goal.updateOne({_id: id}, {$set: updateOps})
+    Goal.updateOne({ _id: id, user: req.userData.userId }, { $set: updateOps })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -144,7 +145,7 @@ exports.goals_delete_goal = (req, res, next) => {
     const id = req.params.goalId;
     
     // First, find the goal by its ID to get its name
-    Goal.findById(id)
+    Goal.findById({ _id: id, user: req.userData.userId })
         .select('name') // Only select the 'name' field
         .exec()
         .then(goal => {
@@ -158,7 +159,7 @@ exports.goals_delete_goal = (req, res, next) => {
             const goalName = goal.name;
 
             // Delete the goal from the database
-            Goal.deleteOne({_id: id})
+            Goal.deleteOne({ _id: id, user: req.userData.userId })
                 .exec()
                 .then(result => {
                     res.status(200).json({

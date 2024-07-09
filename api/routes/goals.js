@@ -5,10 +5,10 @@ const checkAuth = require('../middleware/check-auth');
 const GoalsController = require('../controllers/goals');
 
 // Get All Goals
-router.get('/', GoalsController.goals_get_all);
+router.get('/', checkAuth, GoalsController.goals_get_all);
 
 // Create New Goal
-router.post('/', GoalsController.goals_create_goal);
+router.post('/', checkAuth, GoalsController.goals_create_goal);
 
 // Get Specific Goal
 router.get('/:goalId', GoalsController.goals_get_goal);
@@ -22,9 +22,9 @@ router.get('/:goalId', GoalsController.goals_get_goal);
 */
 
 // Update Specific goal
-router.patch('/:goalId', GoalsController.goals_update_goal);
+router.patch('/:goalId', checkAuth, GoalsController.goals_update_goal);
 
 // Delete Goal
-router.delete('/:goalId', GoalsController.goals_delete_goal);
+router.delete('/:goalId', checkAuth, GoalsController.goals_delete_goal);
 
 module.exports = router;

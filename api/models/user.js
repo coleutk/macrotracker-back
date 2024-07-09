@@ -10,7 +10,7 @@ const userSchema = mongoose.Schema({
         match: /[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?/
     },
     password: {type: String, required: true},
-    selectedGoal: {type: mongoose.Schema.Types.ObjectId, ref: 'Goal'}, // For User's Current Goal
+    selectedGoal: { type: mongoose.Schema.Types.ObjectId, ref: 'Goal', default: null }, // Default to null
     dailyRecords: [{type: mongoose.Schema.Types.ObjectId, ref: 'DailyRecord'}] // Daily Tracked Amounts
 });
 

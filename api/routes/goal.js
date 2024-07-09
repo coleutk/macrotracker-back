@@ -5,6 +5,6 @@ const checkAuth = require('../middleware/check-auth');
 const GoalController = require('../controllers/goal');
 
 // Select CURRENT Goal
-router.post('/:goalId', GoalController.goals_set_current_goal);
+router.post('/makeSelectedGoal', checkAuth, GoalController.goals_set_current_goal);
 
 module.exports = router;

@@ -6,8 +6,8 @@ const User = require('../models/user');
 // Set CURRENT User Specified Goal
 exports.goals_set_current_goal = (req, res, next) => {
     //const userId = req.userData.userId;
-    const userId = '6653b47937963eb408615abc'; // Hardcoded, make this be the one that is currently logged in
-    const goalId = req.params.goalId;
+    const userId = req.userData.userId;
+    const goalId = req.body.goalId;
 
     User.updateOne({_id: userId}, {$set: {selectedGoal: goalId}})
         .exec()

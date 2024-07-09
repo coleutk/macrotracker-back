@@ -125,12 +125,12 @@ exports.user_delete = (req, res, next) => {
 }
 
 // Mainly for retreiving selected goal
-exports.get_user = (req, res, next) => {
-    const userId = req.params.userId;
+exports.get_user_details = (req, res, next) => {
+    const userId = req.userData.userId;
 
     User.findById(userId)
-        .select('email selectedGoal')
-        .populate('selectedGoal') // Populate the selectedGoal with goal details
+        .select('username email selectedGoal') // Select only the necessary fields
+        .populate('selectedGoal') // Populate the selectedGoal field with goal details
         .exec()
         .then(user => {
             if (!user) {
@@ -143,9 +143,6 @@ exports.get_user = (req, res, next) => {
             });
         })
         .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
-            });
+            res.status(500).json({ error: err });
         });
 };

@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Drink = require('../models/drink');
 
 exports.drinks_get_all = (req, res, next) => {
-    Drink.find()
+    Drink.find({ user: req.userData.userId })
         .select('_id name volume calories carbs protein fat')
         .exec()
         .then(docs => {
@@ -48,7 +48,8 @@ exports.drinks_create_drink = (req, res, next) => {
         calories: req.body.calories,
         carbs: req.body.carbs,
         protein: req.body.protein,
-        fat: req.body.fat
+        fat: req.body.fat,
+        user: req.userData.userId // Associate goal with the authenticated user
     });
 
     drink
@@ -134,7 +135,7 @@ exports.drinks_update_drink = (req, res, next) => {
         updateOps[ops.propName] = ops.value;
     }
 
-    Drink.updateOne({_id: id}, {$set: updateOps})
+    Drink.updateOne({ _id: id, user: req.userData.userId }, { $set: updateOps })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -154,7 +155,7 @@ exports.drinks_delete_drink = (req, res, next) => {
     const id = req.params.drinkId;
     
     // First, find the drink by its ID to get its name
-    Drink.findById(id)
+    Drink.findById({ _id: id, user: req.userData.userId })
         .select('name') // Only select the 'name' field
         .exec()
         .then(drink => {
@@ -168,7 +169,7 @@ exports.drinks_delete_drink = (req, res, next) => {
             const drinkName = drink.name;
 
             // Delete the drink from the database
-            Drink.deleteOne({_id: id})
+            Drink.deleteOne({ _id: id, user: req.userData.userId })
                 .exec()
                 .then(result => {
                     res.status(200).json({

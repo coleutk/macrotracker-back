@@ -5,7 +5,7 @@ const checkAuth = require('../middleware/check-auth');
 const DrinksController = require('../controllers/drinks');
 
 // Get all Drinks
-router.get('/', DrinksController.drinks_get_all);
+router.get('/', checkAuth, DrinksController.drinks_get_all);
 
 // Add new Drink
 /* Template for JSON raw body:
@@ -21,7 +21,7 @@ router.get('/', DrinksController.drinks_get_all);
     "fat": 0.2
 }
 */
-router.post('/', DrinksController.drinks_create_drink);
+router.post('/', checkAuth, DrinksController.drinks_create_drink);
 
 // Get Drink by id
 router.get('/:drinkId', checkAuth, DrinksController.drinks_get_drink);
@@ -40,10 +40,10 @@ router.get('/:drinkId', checkAuth, DrinksController.drinks_get_drink);
     { "propName": "volume.unit", "value": "L" }
 ]
 */
-router.patch('/:drinkId', DrinksController.drinks_update_drink);
+router.patch('/:drinkId', checkAuth, DrinksController.drinks_update_drink);
 
 // Delete Drink
-router.delete('/:drinkId', DrinksController.drinks_delete_drink);
+router.delete('/:drinkId', checkAuth, DrinksController.drinks_delete_drink);
 
 
 module.exports = router;

@@ -5,7 +5,7 @@ const checkAuth = require('../middleware/check-auth');
 const FoodsController = require('../controllers/foods');
 
 // Get all Foods
-router.get('/', FoodsController.foods_get_all);
+router.get('/', checkAuth, FoodsController.foods_get_all);
 
 // Add new Food
 /* Template for JSON raw body:
@@ -21,7 +21,7 @@ router.get('/', FoodsController.foods_get_all);
     "fat": 0.2
 }
 */
-router.post('/', FoodsController.foods_create_food);
+router.post('/', checkAuth, FoodsController.foods_create_food);
 
 // Get Food by Id
 router.get('/:foodId', checkAuth, FoodsController.foods_get_food);
@@ -40,10 +40,10 @@ router.get('/:foodId', checkAuth, FoodsController.foods_get_food);
     { "propName": "weight.unit", "value": "g" }
 ]
 */
-router.patch('/:foodId', FoodsController.foods_update_food);
+router.patch('/:foodId', checkAuth, FoodsController.foods_update_food);
 
 // Delete Food
-router.delete('/:foodId', FoodsController.foods_delete_food);
+router.delete('/:foodId', checkAuth, FoodsController.foods_delete_food);
 
 
 module.exports = router;

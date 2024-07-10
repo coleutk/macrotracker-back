@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Food = require('../models/food');
 
 exports.foods_get_all = (req, res, next) => {
-    Food.find()
+    Food.find({ user: req.userData.userId })
         .select('_id name weight calories carbs protein fat')
         .exec()
         .then(docs => {
@@ -18,7 +18,8 @@ exports.foods_get_all = (req, res, next) => {
                         calories: doc.calories,
                         protein: doc.protein,
                         carbs: doc.carbs,
-                        fat: doc.fat
+                        fat: doc.fat,
+                        user: doc.user
                         // request: {
                         //     type: 'GET',
                         //     url: 'http://localhost:3000/foods/' + doc._id
@@ -49,7 +50,8 @@ exports.foods_create_food = (req, res, next) => {
         calories: req.body.calories,
         carbs: req.body.carbs,
         protein: req.body.protein,
-        fat: req.body.fat
+        fat: req.body.fat,
+        user: req.userData.userId // Associate goal with the authenticated user
     });
 
     food
@@ -135,7 +137,7 @@ exports.foods_update_food = (req, res, next) => {
         updateOps[ops.propName] = ops.value;
     }
 
-    Food.updateOne({_id: id}, {$set: updateOps})
+    Food.updateOne({ _id: id, user: req.userData.userId }, { $set: updateOps })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -155,7 +157,7 @@ exports.foods_delete_food = (req, res, next) => {
     const id = req.params.foodId;
     
     // First, find the food by its ID to get its name
-    Food.findById(id)
+    Food.findById({ _id: id, user: req.userData.userId })
         .select('name') // Only select the 'name' field
         .exec()
         .then(food => {
@@ -169,7 +171,7 @@ exports.foods_delete_food = (req, res, next) => {
             const foodName = food.name;
 
             // Delete the food from the database
-            Food.deleteOne({_id: id})
+            Food.deleteOne({ _id: id, user: req.userData.userId })
                 .exec()
                 .then(result => {
                     res.status(200).json({

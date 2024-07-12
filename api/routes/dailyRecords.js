@@ -229,7 +229,7 @@ router.delete('/deleteFoodInput/:foodInputId', checkAuth, (req, res, next) => {
 
         console.log(`Updated Record: ${updatedRecord}`);
 
-        // Calculate the updated nutritional totals
+        // Calculate the updated nutritional totals from both foods and drinks
         let updatedTotals = updatedRecord.foods.reduce((totals, food) => {
             totals.calories += food.food.calories;
             totals.protein += food.food.protein;
@@ -237,6 +237,14 @@ router.delete('/deleteFoodInput/:foodInputId', checkAuth, (req, res, next) => {
             totals.fat += food.food.fat;
             return totals;
         }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+
+        updatedTotals = updatedRecord.drinks.reduce((totals, drink) => {
+            totals.calories += drink.drink.calories;
+            totals.protein += drink.drink.protein;
+            totals.carbs += drink.drink.carbs;
+            totals.fat += drink.drink.fat;
+            return totals;
+        }, updatedTotals);
 
         updatedRecord.calories = updatedTotals.calories;
         updatedRecord.protein = updatedTotals.protein;
@@ -257,59 +265,65 @@ router.delete('/deleteFoodInput/:foodInputId', checkAuth, (req, res, next) => {
 
 
 
-router.delete('/deleteDrinkInput/:drinkInputId', (req, res, next) => {
-    const userId = '668c9953258958417827a8c0'; // Hardcoded for now
+router.delete('/deleteDrinkInput/:drinkInputId', checkAuth, (req, res, next) => {
+    const userId = req.userData.userId; // Use the authenticated user's ID
     const drinkInputId = req.params.drinkInputId;
 
     console.log(`User ID: ${userId}`);
     console.log(`Drink Input ID: ${drinkInputId}`);
 
     // Find the daily record for the current date
-    DailyRecord.findOne({ userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } })
-        .then(dailyRecord => {
-            if (!dailyRecord) {
-                console.log('No daily record found for today');
-                return res.status(404).json({ message: 'No daily record found for today' });
-            }
+    DailyRecord.findOneAndUpdate(
+        { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+        { $pull: { drinks: { _id: drinkInputId } } },
+        { new: true }
+    )
+    .then(updatedRecord => {
+        if (!updatedRecord) {
+            console.log('No daily record found for today');
+            return res.status(404).json({ message: 'No daily record found for today' });
+        }
 
-            // Find the drink item to remove
-            const drinkToRemove = dailyRecord.drinks.id(drinkInputId);
-            if (!drinkToRemove) {
-                console.log('Drink item not found');
-                return res.status(404).json({ message: 'Drink item not found' });
-            }
+        console.log(`Updated Record: ${updatedRecord}`);
 
-            // Update the nutritional totals in the daily record
-            dailyRecord.calories -= drinkToRemove.drink.calories;
-            dailyRecord.protein -= drinkToRemove.drink.protein;
-            dailyRecord.carbs -= drinkToRemove.drink.carbs;
-            dailyRecord.fat -= drinkToRemove.drink.fat;
+        // Calculate the updated nutritional totals from both foods and drinks
+        let updatedTotals = updatedRecord.foods.reduce((totals, food) => {
+            totals.calories += food.food.calories;
+            totals.protein += food.food.protein;
+            totals.carbs += food.food.carbs;
+            totals.fat += food.food.fat;
+            return totals;
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-            // Save the updated daily record with new nutritional totals
-            return dailyRecord.save();
-        })
-        .then(updatedRecord => {
-            console.log(`Updated Record: ${updatedRecord}`);
-            // Remove the drink item from the daily record
-            return DailyRecord.findOneAndUpdate(
-                { _id: updatedRecord._id },
-                { $pull: { drinks: { _id: drinkInputId } } },
-                { new: true }
-            );
-        })
-        .then(finalRecord => {
-            console.log(`Final Record: ${finalRecord}`);
-            res.status(200).json(finalRecord);
-        })
-        .catch(err => {
-            console.log('Error processing request', err);
-            res.status(500).json({ error: err });
-        });
+        updatedTotals = updatedRecord.drinks.reduce((totals, drink) => {
+            totals.calories += drink.drink.calories;
+            totals.protein += drink.drink.protein;
+            totals.carbs += drink.drink.carbs;
+            totals.fat += drink.drink.fat;
+            return totals;
+        }, updatedTotals);
+
+        updatedRecord.calories = updatedTotals.calories;
+        updatedRecord.protein = updatedTotals.protein;
+        updatedRecord.carbs = updatedTotals.carbs;
+        updatedRecord.fat = updatedTotals.fat;
+
+        return updatedRecord.save();
+    })
+    .then(finalRecord => {
+        console.log(`Final Record: ${finalRecord}`);
+        res.status(200).json(finalRecord);
+    })
+    .catch(err => {
+        console.log('Error processing request', err);
+        res.status(500).json({ error: err });
+    });
 });
 
 
+
 router.delete('/deleteManualInput/:manualInputId', (req, res, next) => {
-    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+    const userId = '668c9953258958417827a8c0'; // Hardcoded for now
     const manualInputId = req.params.manualInputId;
 
     console.log(`User ID: ${userId}`);

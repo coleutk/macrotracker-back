@@ -3,12 +3,13 @@ const router = express.Router();
 const ArchivedRecord = require('../models/archivedRecord'); // Adjust path as needed
 
 const mongoose = require('mongoose');
+const checkAuth = require('../middleware/check-auth');
 
 // Get all archived records for a user
-router.get('/', (req, res, next) => {
-    const userId = '6653b47937963eb408615abc'; // Hardcoded for now
+router.get('/', checkAuth, (req, res, next) => {
+    const userId = req.userData.userId; // Hardcoded for now
 
-    ArchivedRecord.findOne({ userId: userId })
+    ArchivedRecord.findOne({ user: userId })
         .then(archivedRecords => {
             if (!archivedRecords) {
                 console.log("not found");

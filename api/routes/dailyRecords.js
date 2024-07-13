@@ -148,10 +148,10 @@ router.post('/resetDailyRecord', async (req, res, next) => {
         }
 
         // Find or create the archived record document for the user
-        let archivedRecord = await ArchivedRecord.findOne({ userId: userId });
+        let archivedRecord = await ArchivedRecord.findOne({ user: userId });
         if (!archivedRecord) {
             archivedRecord = new ArchivedRecord({
-                userId: userId,
+                user: userId,
                 records: []
             });
         }
@@ -229,7 +229,7 @@ router.delete('/deleteFoodInput/:foodInputId', checkAuth, (req, res, next) => {
 
         console.log(`Updated Record: ${updatedRecord}`);
 
-        // Calculate the updated nutritional totals from both foods and drinks
+        // Calculate the updated nutritional totals from foods, drinks, and manuals
         let updatedTotals = updatedRecord.foods.reduce((totals, food) => {
             totals.calories += food.food.calories;
             totals.protein += food.food.protein;
@@ -243,6 +243,14 @@ router.delete('/deleteFoodInput/:foodInputId', checkAuth, (req, res, next) => {
             totals.protein += drink.drink.protein;
             totals.carbs += drink.drink.carbs;
             totals.fat += drink.drink.fat;
+            return totals;
+        }, updatedTotals);
+
+        updatedTotals = updatedRecord.manuals.reduce((totals, manual) => {
+            totals.calories += manual.calories;
+            totals.protein += manual.protein;
+            totals.carbs += manual.carbs;
+            totals.fat += manual.fat;
             return totals;
         }, updatedTotals);
 
@@ -286,7 +294,7 @@ router.delete('/deleteDrinkInput/:drinkInputId', checkAuth, (req, res, next) => 
 
         console.log(`Updated Record: ${updatedRecord}`);
 
-        // Calculate the updated nutritional totals from both foods and drinks
+        // Calculate the updated nutritional totals from foods, drinks, and manuals
         let updatedTotals = updatedRecord.foods.reduce((totals, food) => {
             totals.calories += food.food.calories;
             totals.protein += food.food.protein;
@@ -300,6 +308,14 @@ router.delete('/deleteDrinkInput/:drinkInputId', checkAuth, (req, res, next) => 
             totals.protein += drink.drink.protein;
             totals.carbs += drink.drink.carbs;
             totals.fat += drink.drink.fat;
+            return totals;
+        }, updatedTotals);
+
+        updatedTotals = updatedRecord.manuals.reduce((totals, manual) => {
+            totals.calories += manual.calories;
+            totals.protein += manual.protein;
+            totals.carbs += manual.carbs;
+            totals.fat += manual.fat;
             return totals;
         }, updatedTotals);
 
@@ -322,54 +338,65 @@ router.delete('/deleteDrinkInput/:drinkInputId', checkAuth, (req, res, next) => 
 
 
 
-router.delete('/deleteManualInput/:manualInputId', (req, res, next) => {
-    const userId = '668c9953258958417827a8c0'; // Hardcoded for now
+router.delete('/deleteManualInput/:manualInputId', checkAuth, (req, res, next) => {
+    const userId = req.userData.userId; // Hardcoded for now
     const manualInputId = req.params.manualInputId;
 
     console.log(`User ID: ${userId}`);
     console.log(`Manual Input ID: ${manualInputId}`);
 
     // Find the daily record for the current date
-    DailyRecord.findOne({ userId: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } })
-        .then(dailyRecord => {
-            if (!dailyRecord) {
-                console.log('No daily record found for today');
-                return res.status(404).json({ message: 'No daily record found for today' });
-            }
+    DailyRecord.findOneAndUpdate(
+        { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+        { $pull: { manuals: { _id: manualInputId } } },
+        { new: true }
+    )
+    .then(updatedRecord => {
+        if (!updatedRecord) {
+            console.log('No daily record found for today');
+            return res.status(404).json({ message: 'No daily record found for today' });
+        }
 
-            // Find the manual item to remove
-            const manualToRemove = dailyRecord.manuals.id(manualInputId);
-            if (!manualToRemove) {
-                console.log('Manual item not found');
-                return res.status(404).json({ message: 'Manual item not found' });
-            }
+        // Calculate the updated nutritional totals from foods, drinks, and manuals
+        let updatedTotals = updatedRecord.foods.reduce((totals, food) => {
+            totals.calories += food.food.calories;
+            totals.protein += food.food.protein;
+            totals.carbs += food.food.carbs;
+            totals.fat += food.food.fat;
+            return totals;
+        }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
-            // Update the nutritional totals in the daily record
-            dailyRecord.calories -= manualToRemove.calories;
-            dailyRecord.protein -= manualToRemove.protein;
-            dailyRecord.carbs -= manualToRemove.carbs;
-            dailyRecord.fat -= manualToRemove.fat;
+        updatedTotals = updatedRecord.drinks.reduce((totals, drink) => {
+            totals.calories += drink.drink.calories;
+            totals.protein += drink.drink.protein;
+            totals.carbs += drink.drink.carbs;
+            totals.fat += drink.drink.fat;
+            return totals;
+        }, updatedTotals);
 
-            // Save the updated daily record with new nutritional totals
-            return dailyRecord.save();
-        })
-        .then(updatedRecord => {
-            console.log(`Updated Record: ${updatedRecord}`);
-            // Remove the manual item from the daily record
-            return DailyRecord.findOneAndUpdate(
-                { _id: updatedRecord._id },
-                { $pull: { manuals: { _id: manualInputId } } },
-                { new: true }
-            );
-        })
-        .then(finalRecord => {
-            console.log(`Final Record: ${finalRecord}`);
-            res.status(200).json(finalRecord);
-        })
-        .catch(err => {
-            console.log('Error processing request', err);
-            res.status(500).json({ error: err });
-        });
+        updatedTotals = updatedRecord.manuals.reduce((totals, manual) => {
+            totals.calories += manual.calories;
+            totals.protein += manual.protein;
+            totals.carbs += manual.carbs;
+            totals.fat += manual.fat;
+            return totals;
+        }, updatedTotals);
+
+        updatedRecord.calories = updatedTotals.calories;
+        updatedRecord.protein = updatedTotals.protein;
+        updatedRecord.carbs = updatedTotals.carbs;
+        updatedRecord.fat = updatedTotals.fat;
+
+        return updatedRecord.save();
+    })
+    .then(finalRecord => {
+        console.log(`Final Record: ${finalRecord}`);
+        res.status(200).json(finalRecord);
+    })
+    .catch(err => {
+        console.log('Error processing request', err);
+        res.status(500).json({ error: err });
+    });
 });
 
 

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const { dailyRecordSchema } = require('../models/dailyRecord'); // Import the dailyRecord schema
 
 const archivedRecordSchema = mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     records: [dailyRecordSchema] // Array of daily records
 });
 

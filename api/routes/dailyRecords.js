@@ -136,8 +136,8 @@ router.post('/addManual', checkAuth, (req, res, next) => {
 });
 
 
-router.post('/resetDailyRecord', async (req, res, next) => {
-    const userId = '668c9953258958417827a8c0'; // Hardcoded for now
+router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
+    const userId = req.userData.userId; // Hardcoded for now
 
     try {
         // Find the current daily record

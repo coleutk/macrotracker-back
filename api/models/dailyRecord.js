@@ -17,8 +17,6 @@ const dailyDrinkSchema = new mongoose.Schema({
 const dailyRecordSchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
     date: { type: Date, default: Date.now, required: true },
-    // foods: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Food' }],
-    // drinks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Drink' }],
     manuals: [manualSchema],
     foods: [dailyFoodSchema], // Array of food entries
     drinks: [dailyDrinkSchema], // Array of drink entries
@@ -27,6 +25,12 @@ const dailyRecordSchema = mongoose.Schema({
     carbs: { type: Number, default: 0 },
     fat: { type: Number, default: 0 },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    goal: { // Add goal field here
+        calorieGoal: { type: Number, required: true },
+        proteinGoal: { type: Number, required: true },
+        carbGoal: { type: Number, required: true },
+        fatGoal: { type: Number, required: true }
+    }
 });
 
 module.exports = mongoose.model('DailyRecord', dailyRecordSchema);

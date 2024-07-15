@@ -6,155 +6,193 @@ const mongoose = require('mongoose');
 
 const DailyRecord = require('../models/dailyRecord');
 const ArchivedRecord = require('../models/archivedRecord'); // Assuming the schema file is named archivedRecord.js
+const User = require('../models/user'); // Ensure this line is present
 const Food = require('../models/food');
 const Drink = require('../models/drink');
 
-router.post('/addFood', checkAuth, (req, res, next) => {
-    const userId = req.userData.userId; // Hardcoded for now
-    const dailyFood = {
-        food: {
-            _id: new mongoose.Types.ObjectId(),
-            name: req.body.name,
-            weight: {
-                value: req.body.weight.value,
-                unit: req.body.weight.unit
-            },
-            calories: req.body.calories,
-            protein: req.body.protein,
-            carbs: req.body.carbs,
-            fat: req.body.fat,
-            user: userId // Ensure the user field is set here
-        },
-        servings: req.body.servings,
-    };
+router.post('/addFood', checkAuth, async (req, res, next) => {
+    const userId = req.userData.userId;
 
-    DailyRecord.findOneAndUpdate(
-        { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-        { 
-            $push: { foods: dailyFood }, // Add the daily food entry
-            $inc: { // Increment the totals
-                calories: dailyFood.food.calories,
-                protein: dailyFood.food.protein,
-                carbs: dailyFood.food.carbs,
-                fat: dailyFood.food.fat
-            }
-        },
-        { new: true, upsert: true } // Create a new record if none exists, return updated document
-    )
-    .then(updatedRecord => {
-        res.status(200).json({
-            updatedRecord
-        });
-    })
-    .catch(err => {
-        res.status(500).json({
-            error: err
-        });
-    });
+    try {
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const dailyFood = {
+            food: {
+                _id: new mongoose.Types.ObjectId(),
+                name: req.body.name,
+                weight: {
+                    value: req.body.weight.value,
+                    unit: req.body.weight.unit
+                },
+                calories: req.body.calories,
+                protein: req.body.protein,
+                carbs: req.body.carbs,
+                fat: req.body.fat,
+                user: userId
+            },
+            servings: req.body.servings,
+        };
+
+        const updatedRecord = await DailyRecord.findOneAndUpdate(
+            { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+            {
+                $push: { foods: dailyFood },
+                $inc: {
+                    calories: dailyFood.food.calories,
+                    protein: dailyFood.food.protein,
+                    carbs: dailyFood.food.carbs,
+                    fat: dailyFood.food.fat
+                },
+                $setOnInsert: {
+                    goal: {
+                        calorieGoal: user.selectedGoal.calorieGoal,
+                        proteinGoal: user.selectedGoal.proteinGoal,
+                        carbGoal: user.selectedGoal.carbGoal,
+                        fatGoal: user.selectedGoal.fatGoal
+                    }
+                }
+            },
+            { new: true, upsert: true }
+        );
+
+        res.status(200).json({ updatedRecord });
+    } catch (err) {
+        res.status(500).json({ error: err });
+    }
 });
 
 
-router.post('/addDrink', checkAuth, (req, res, next) => {
-    const userId = req.userData.userId; // Hardcoded for now
-    const dailyDrink = {
-        drink: {
-            _id: new mongoose.Types.ObjectId(),
-            name: req.body.name,
-            volume: {
-                value: req.body.volume.value,
-                unit: req.body.volume.unit
-            },
-            calories: req.body.calories,
-            protein: req.body.protein,
-            carbs: req.body.carbs,
-            fat: req.body.fat,
-            user: userId // Ensure the user field is set here
-        },
-        servings: req.body.servings // Add the serving size here
-    };
+router.post('/addDrink', checkAuth, async (req, res, next) => {
+    const userId = req.userData.userId;
 
-    DailyRecord.findOneAndUpdate(
-        { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-        { 
-            $push: { drinks: dailyDrink }, // Add the daily drink entry
-            $inc: { // Increment the totals
-                calories: dailyDrink.drink.calories,
-                protein: dailyDrink.drink.protein,
-                carbs: dailyDrink.drink.carbs,
-                fat: dailyDrink.drink.fat
-            }
-        },
-        { new: true, upsert: true } // Create a new record if none exists, return updated document
-    )
-    .then(updatedRecord => {
-        res.status(200).json({
-            updatedRecord
-        });
-    })
-    .catch(err => {
-        res.status(500).json({
-            error: err
-        });
-    });
+    try {
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const dailyDrink = {
+            drink: {
+                _id: new mongoose.Types.ObjectId(),
+                name: req.body.name,
+                volume: {
+                    value: req.body.volume.value,
+                    unit: req.body.volume.unit
+                },
+                calories: req.body.calories,
+                protein: req.body.protein,
+                carbs: req.body.carbs,
+                fat: req.body.fat,
+                user: userId
+            },
+            servings: req.body.servings
+        };
+
+        const updatedRecord = await DailyRecord.findOneAndUpdate(
+            { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+            {
+                $push: { drinks: dailyDrink },
+                $inc: {
+                    calories: dailyDrink.drink.calories,
+                    protein: dailyDrink.drink.protein,
+                    carbs: dailyDrink.drink.carbs,
+                    fat: dailyDrink.drink.fat
+                },
+                $setOnInsert: {
+                    goal: {
+                        calorieGoal: user.selectedGoal.calorieGoal,
+                        proteinGoal: user.selectedGoal.proteinGoal,
+                        carbGoal: user.selectedGoal.carbGoal,
+                        fatGoal: user.selectedGoal.fatGoal
+                    }
+                }
+            },
+            { new: true, upsert: true }
+        );
+
+        res.status(200).json({ updatedRecord });
+    } catch (err) {
+        res.status(500).json({ error: err });
+    }
 });
+
 
 // For Adding Manual Macro Info
-router.post('/addManual', checkAuth, (req, res, next) => {
-    const userId = req.userData.userId; // Hardcoded for now
-    const dailyManual = {
-        _id: new mongoose.Types.ObjectId(), // Generate a new ObjectId
-        calories: req.body.calories,
-        protein: req.body.protein,
-        carbs: req.body.carbs,
-        fat: req.body.fat,
-        user: userId // Ensure the user field is set here
-    };
+router.post('/addManual', checkAuth, async (req, res, next) => {
+    const userId = req.userData.userId;
 
-    DailyRecord.findOneAndUpdate(
-        { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-        { 
-            $push: { manuals: dailyManual }, // Add the daily manual entry
-            $inc: { // Increment the totals
-                calories: dailyManual.calories,
-                protein: dailyManual.protein,
-                carbs: dailyManual.carbs,
-                fat: dailyManual.fat
-            }
-        },
-        { new: true, upsert: true } // Create a new record if none exists, return updated document
-    )
-    .then(updatedRecord => {
-        res.status(200).json({
-            updatedRecord
-        });
-    })
-    .catch(err => {
-        res.status(500).json({
-            error: err
-        });
-    });
+    try {
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const dailyManual = {
+            _id: new mongoose.Types.ObjectId(),
+            calories: req.body.calories,
+            protein: req.body.protein,
+            carbs: req.body.carbs,
+            fat: req.body.fat,
+            user: userId
+        };
+
+        const updatedRecord = await DailyRecord.findOneAndUpdate(
+            { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+            {
+                $push: { manuals: dailyManual },
+                $inc: {
+                    calories: dailyManual.calories,
+                    protein: dailyManual.protein,
+                    carbs: dailyManual.carbs,
+                    fat: dailyManual.fat
+                },
+                $setOnInsert: {
+                    goal: {
+                        calorieGoal: user.selectedGoal.calorieGoal,
+                        proteinGoal: user.selectedGoal.proteinGoal,
+                        carbGoal: user.selectedGoal.carbGoal,
+                        fatGoal: user.selectedGoal.fatGoal
+                    }
+                }
+            },
+            { new: true, upsert: true }
+        );
+
+        res.status(200).json({ updatedRecord });
+    } catch (err) {
+        res.status(500).json({ error: err });
+    }
 });
+
 
 
 router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
-    const userId = req.userData.userId; // Hardcoded for now
+    const userId = req.userData.userId;
 
     try {
+        console.log(`User ID: ${userId}`);
+
         // Find the current daily record
         const currentRecord = await DailyRecord.findOne({ user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } });
-
         if (!currentRecord) {
+            console.log('No current daily record found');
             return res.status(404).json({ message: 'No current daily record found' });
         }
+        console.log('Current daily record found:', currentRecord);
 
         // Find or create the archived record document for the user
         let archivedRecord = await ArchivedRecord.findOne({ user: userId });
         if (!archivedRecord) {
+            console.log('No archived record found, creating a new one');
             archivedRecord = new ArchivedRecord({
                 user: userId,
                 records: []
             });
         }
+        console.log('Archived record:', archivedRecord);
 
         // Add the current daily record to the archived records with a new unique ID
         const newArchivedRecord = currentRecord.toObject();
@@ -163,6 +201,7 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
 
         // Save the archived record
         await archivedRecord.save();
+        console.log('Archived record saved:', archivedRecord);
 
         // Reset the current daily record
         const resetRecord = await DailyRecord.findOneAndUpdate(
@@ -170,6 +209,7 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
             { $set: { foods: [], drinks: [], manuals: [], calories: 0, protein: 0, carbs: 0, fat: 0 } },
             { new: true, upsert: true }
         );
+        console.log('Daily record reset:', resetRecord);
 
         res.status(200).json({
             message: 'Daily record archived and reset successfully',
@@ -177,11 +217,13 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
             resetRecord
         });
     } catch (err) {
+        console.error('Error:', err);
         res.status(500).json({
             error: err.message
         });
     }
 });
+
 
 
 router.get('/currentDailyRecord', checkAuth, (req, res, next) => {

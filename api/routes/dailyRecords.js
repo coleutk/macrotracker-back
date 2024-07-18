@@ -161,7 +161,8 @@ router.post('/addManual', checkAuth, async (req, res, next) => {
             { new: true, upsert: true }
         );
 
-        res.status(200).json({ updatedRecord });
+        //console.log(goal);
+        res.status(200).json({ updatedRecord });        
     } catch (err) {
         res.status(500).json({ error: err });
     }
@@ -174,6 +175,16 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
 
     try {
         console.log(`User ID: ${userId}`);
+
+        // Fetch the latest user data
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const selectedGoal = user.selectedGoal;
+        if (!selectedGoal) {
+            return res.status(400).json({ message: 'No selected goal found for user' });
+        }
 
         // Find the current daily record
         const currentRecord = await DailyRecord.findOne({ user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } });
@@ -197,6 +208,12 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
         // Add the current daily record to the archived records with a new unique ID
         const newArchivedRecord = currentRecord.toObject();
         newArchivedRecord._id = new mongoose.Types.ObjectId(); // Generate a new unique ID
+        newArchivedRecord.goal = {
+            calorieGoal: selectedGoal.calorieGoal,
+            proteinGoal: selectedGoal.proteinGoal,
+            carbGoal: selectedGoal.carbGoal,
+            fatGoal: selectedGoal.fatGoal
+        };
         archivedRecord.records.push(newArchivedRecord);
 
         // Save the archived record
@@ -206,7 +223,23 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
         // Reset the current daily record
         const resetRecord = await DailyRecord.findOneAndUpdate(
             { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-            { $set: { foods: [], drinks: [], manuals: [], calories: 0, protein: 0, carbs: 0, fat: 0 } },
+            {
+                $set: {
+                    foods: [],
+                    drinks: [],
+                    manuals: [],
+                    calories: 0,
+                    protein: 0,
+                    carbs: 0,
+                    fat: 0,
+                    goal: {
+                        calorieGoal: selectedGoal.calorieGoal,
+                        proteinGoal: selectedGoal.proteinGoal,
+                        carbGoal: selectedGoal.carbGoal,
+                        fatGoal: selectedGoal.fatGoal
+                    }
+                }
+            },
             { new: true, upsert: true }
         );
         console.log('Daily record reset:', resetRecord);
@@ -223,7 +256,6 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
         });
     }
 });
-
 
 
 router.get('/currentDailyRecord', checkAuth, (req, res, next) => {

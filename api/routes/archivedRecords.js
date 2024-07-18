@@ -15,7 +15,7 @@ router.get('/', checkAuth, (req, res, next) => {
                 console.log("not found");
                 return res.status(404).json({ message: 'No archived records found for this user' });
             }
-            console.log("Archived records found:", archivedRecords);
+            //console.log("Archived records found:", archivedRecords);
             res.status(200).json(archivedRecords);
         })
         .catch(err => {

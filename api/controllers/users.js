@@ -145,4 +145,66 @@ exports.get_user_details = (req, res, next) => {
         .catch(err => {
             res.status(500).json({ error: err });
         });
-};
+}
+
+exports.update_user_details = async (req, res, next) => {
+    const userId = req.userData.userId;
+    const { username, email } = req.body;
+
+    try {
+        const updatedUser = await User.findByIdAndUpdate(userId, { username, email }, {new: true});
+
+        if(!updatedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({
+            message: 'User updated successfully',
+            user: updatedUser
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Failed to update user',
+            error: error.message
+        });
+    }
+}
+
+exports.update_password = async (req, res, next) => {
+    const userId = req.userData.userId;
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: "New passwords do not match" });
+    }
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: "Current password is incorrect" });
+        }
+
+        bcrypt.hash(newPassword, 10, async (err, hash) => {
+            if (err) {
+                return res.status(500).json({ error: err });
+            }
+
+            user.password = hash;
+            await user.save();
+
+            res.status(200).json({ message: "Password updated successfully" });
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to update password", error: error.message });
+    }
+}
+

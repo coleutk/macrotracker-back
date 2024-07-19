@@ -14,4 +14,9 @@ const userSchema = mongoose.Schema({
     dailyRecords: [{type: mongoose.Schema.Types.ObjectId, ref: 'DailyRecord'}] // Daily Tracked Amounts
 });
 
+// Method to verify password
+userSchema.methods.verifyPassword = function(password) {
+    return bcrypt.compare(password, this.password);
+};
+
 module.exports = mongoose.model('User', userSchema);

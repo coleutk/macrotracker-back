@@ -220,34 +220,13 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
         await archivedRecord.save();
         console.log('Archived record saved:', archivedRecord);
 
-        // Reset the current daily record
-        const resetRecord = await DailyRecord.findOneAndUpdate(
-            { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-            {
-                $set: {
-                    foods: [],
-                    drinks: [],
-                    manuals: [],
-                    calories: 0,
-                    protein: 0,
-                    carbs: 0,
-                    fat: 0,
-                    goal: {
-                        calorieGoal: selectedGoal.calorieGoal,
-                        proteinGoal: selectedGoal.proteinGoal,
-                        carbGoal: selectedGoal.carbGoal,
-                        fatGoal: selectedGoal.fatGoal
-                    }
-                }
-            },
-            { new: true, upsert: true }
-        );
-        console.log('Daily record reset:', resetRecord);
+        // Remove the current daily record from DailyRecords collection
+        await DailyRecord.deleteOne({ _id: currentRecord._id });
+        console.log('Daily record removed from DailyRecords collection');
 
         res.status(200).json({
             message: 'Daily record archived and reset successfully',
-            archivedRecord,
-            resetRecord
+            archivedRecord
         });
     } catch (err) {
         console.error('Error:', err);
@@ -256,6 +235,7 @@ router.post('/resetDailyRecord', checkAuth, async (req, res, next) => {
         });
     }
 });
+
 
 
 router.get('/currentDailyRecord', checkAuth, (req, res, next) => {
@@ -473,6 +453,59 @@ router.delete('/deleteManualInput/:manualInputId', checkAuth, (req, res, next) =
     });
 });
 
+// Currently, we only have the ability to reset the current daily rather than
+// create a new one when we want, so I will make a function that specifically 
+// creates a new daily (FOR THE NEXT DAY) so we can implement this more cleanly 
+// into nutrition log
 
+router.post('/createNextDailyRecord', checkAuth, async (req, res, next) => {
+    const userId = req.userData.userId;
+
+    try {
+        const user = await User.findById(userId).populate('selectedGoal');
+        if(!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        const selectedGoal = user.selectedGoal;
+        if(!selectedGoal) {
+            return res.status(400).json({ message: 'No selected goal found for user' });
+        }
+
+        const currentDate = new Date();
+        const nextDayDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+
+        const newRecord = new DailyRecord({
+            _id: new mongoose.Types.ObjectId(),
+            user: userId,
+            date: nextDayDate,
+            foods: [],
+            drinks: [],
+            manuals: [],
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            goal: {
+                calorieGoal: selectedGoal.calorieGoal,
+                proteinGoal: selectedGoal.proteinGoal,
+                carbGoal: selectedGoal.carbGoal,
+                fatGoal: selectedGoal.fatGoal
+            }
+        });
+
+        await newRecord.save();
+        console.log('New daily record created: ', newRecord);
+
+        res.status(201).json({
+            message: 'New daily record created successfully',
+            newRecord
+        });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({
+            error: err.message
+        });
+    }
+});
 
 module.exports = router;

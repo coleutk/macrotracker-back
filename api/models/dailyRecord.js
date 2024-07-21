@@ -30,7 +30,8 @@ const dailyRecordSchema = mongoose.Schema({
         proteinGoal: { type: Number, required: true },
         carbGoal: { type: Number, required: true },
         fatGoal: { type: Number, required: true }
-    }
+    },
+    locked: { type: Boolean, default: true },
 });
 
 module.exports = mongoose.model('DailyRecord', dailyRecordSchema);

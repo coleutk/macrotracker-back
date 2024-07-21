@@ -245,7 +245,7 @@ router.get('/currentDailyRecord', checkAuth, (req, res, next) => {
         .populate('foods')
         .populate('drinks')
         .populate('manuals')
-        .select('_id user date calories protein carbs fat manuals foods drinks')
+        .select('_id user date calories protein carbs fat manuals foods drinks locked')
         .exec()
         .then(record => {
             if(!record) {
@@ -458,16 +458,67 @@ router.delete('/deleteManualInput/:manualInputId', checkAuth, (req, res, next) =
 // creates a new daily (FOR THE NEXT DAY) so we can implement this more cleanly 
 // into nutrition log
 
+// router.post('/createNextDailyRecord', checkAuth, async (req, res, next) => {
+//     const userId = req.userData.userId;
+
+//     try {
+//         const user = await User.findById(userId).populate('selectedGoal');
+//         if(!user) {
+//             return res.status(404).json({ message: 'User not found' });
+//         }
+//         const selectedGoal = user.selectedGoal;
+//         if(!selectedGoal) {
+//             return res.status(400).json({ message: 'No selected goal found for user' });
+//         }
+
+//         const currentDate = new Date();
+//         const nextDayDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
+
+//         const newRecord = new DailyRecord({
+//             _id: new mongoose.Types.ObjectId(),
+//             user: userId,
+//             date: nextDayDate,
+//             foods: [],
+//             drinks: [],
+//             manuals: [],
+//             calories: 0,
+//             protein: 0,
+//             carbs: 0,
+//             fat: 0,
+//             goal: {
+//                 calorieGoal: selectedGoal.calorieGoal,
+//                 proteinGoal: selectedGoal.proteinGoal,
+//                 carbGoal: selectedGoal.carbGoal,
+//                 fatGoal: selectedGoal.fatGoal
+//             },
+//             locked: true // Initially locked
+//         });
+
+//         await newRecord.save();
+//         console.log('New daily record created: ', newRecord);
+
+//         res.status(201).json({
+//             message: 'New daily record created successfully',
+//             newRecord
+//         });
+//     } catch (err) {
+//         console.error('Error:', err);
+//         res.status(500).json({
+//             error: err.message
+//         });
+//     }
+// });
+
 router.post('/createNextDailyRecord', checkAuth, async (req, res, next) => {
     const userId = req.userData.userId;
 
     try {
         const user = await User.findById(userId).populate('selectedGoal');
-        if(!user) {
+        if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
         const selectedGoal = user.selectedGoal;
-        if(!selectedGoal) {
+        if (!selectedGoal) {
             return res.status(400).json({ message: 'No selected goal found for user' });
         }
 
@@ -490,11 +541,26 @@ router.post('/createNextDailyRecord', checkAuth, async (req, res, next) => {
                 proteinGoal: selectedGoal.proteinGoal,
                 carbGoal: selectedGoal.carbGoal,
                 fatGoal: selectedGoal.fatGoal
-            }
+            },
+            locked: true // Set the new daily record as locked
         });
 
         await newRecord.save();
         console.log('New daily record created: ', newRecord);
+
+        // Set a timer to unlock the record 10 seconds after creation
+        setTimeout(async () => {
+            try {
+                const updatedRecord = await DailyRecord.findByIdAndUpdate(
+                    newRecord._id,
+                    { $set: { locked: false } },
+                    { new: true }
+                );
+                console.log('Daily record unlocked: ', updatedRecord);
+            } catch (err) {
+                console.error('Error unlocking daily record:', err);
+            }
+        }, 10000); // 10000 milliseconds = 10 seconds
 
         res.status(201).json({
             message: 'New daily record created successfully',

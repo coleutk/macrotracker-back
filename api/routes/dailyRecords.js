@@ -574,4 +574,62 @@ router.post('/createNextDailyRecord', checkAuth, async (req, res, next) => {
     }
 });
 
+
+
+
+router.post('/initializeDailyRecordIfEmpty', checkAuth, async (req, res, next) => {
+    const userId = req.userData.userId;
+
+    try {
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const archivedRecord = await ArchivedRecord.findOne({ user: userId });
+        const dailyRecord = await DailyRecord.findOne({ user: userId });
+
+        if (!archivedRecord && !dailyRecord) {
+            const selectedGoal = user.selectedGoal;
+            const currentDate = new Date();
+
+            const newRecord = new DailyRecord({
+                _id: new mongoose.Types.ObjectId(),
+                user: userId,
+                date: currentDate,
+                foods: [],
+                drinks: [],
+                manuals: [],
+                calories: 0,
+                protein: 0,
+                carbs: 0,
+                fat: 0,
+                goal: {
+                    calorieGoal: selectedGoal.calorieGoal,
+                    proteinGoal: selectedGoal.proteinGoal,
+                    carbGoal: selectedGoal.carbGoal,
+                    fatGoal: selectedGoal.fatGoal
+                },
+                locked: false
+            });
+
+            await newRecord.save();
+            console.log('New daily record created: ', newRecord);
+
+            return res.status(201).json({
+                message: 'New daily record created successfully',
+                newRecord: newRecord.toObject()
+            });
+        } else {
+            return res.status(200).json({ message: 'Records already exist' });
+        }
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({
+            error: err.message
+        });
+    }
+});
+
+
 module.exports = router;

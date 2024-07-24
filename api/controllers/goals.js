@@ -185,3 +185,19 @@ exports.goals_delete_goal = (req, res, next) => {
             });
         });
 }
+
+exports.goals_clear_selected = async (req, res) => {
+    try {
+        const userId = req.userData.userId;
+        await User.findByIdAndUpdate(userId, { selectedGoal: null });
+        res.status(200).json({
+            success: true,
+            message: 'Selected goal cleared'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};

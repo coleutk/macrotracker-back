@@ -27,4 +27,7 @@ router.patch('/:goalId', checkAuth, GoalsController.goals_update_goal);
 // Delete Goal
 router.delete('/:goalId', checkAuth, GoalsController.goals_delete_goal);
 
+// Clear Selected Goal
+router.post('/clearSelectedGoal', checkAuth, GoalsController.goals_clear_selected);
+
 module.exports = router;

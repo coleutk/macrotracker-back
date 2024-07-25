@@ -24,4 +24,34 @@ router.get('/', checkAuth, (req, res, next) => {
         });
 });
 
+router.delete('/deleteArchivedRecord', checkAuth, async (req, res) => {
+    const userId = req.userData.userId;
+    const { date } = req.body;
+
+    console.log('Received date:', date); // Log the received date
+    console.log('Request body:', req.body); // Log the entire request body for debugging
+
+    try {
+        const result = await ArchivedRecord.findOneAndUpdate(
+            { user: userId },
+            { $pull: { records: { date: date } } },
+            { new: true }
+        );
+
+        if (result) {
+            const recordDeleted = result.records.some(record => record.date === date);
+            if (!recordDeleted) {
+                res.status(200).json({ message: 'Archived record deleted successfully' });
+            } else {
+                res.status(404).json({ message: 'No record found for the given date' });
+            }
+        } else {
+            res.status(404).json({ message: 'No record found for the given user' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 module.exports = router;

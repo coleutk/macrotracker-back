@@ -37,13 +37,16 @@ exports.goals_get_all = (req, res, next) => {
 }
 
 exports.goals_create_goal = (req, res, next) => {
+    const carbGoal = req.body.carbGoal || 0;
+    const fatGoal = req.body.fatGoal || 0;
+
     const goal = new Goal({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
         calorieGoal: req.body.calorieGoal,
         proteinGoal: req.body.proteinGoal,
-        carbGoal: req.body.carbGoal,
-        fatGoal: req.body.fatGoal,
+        carbGoal: carbGoal,
+        fatGoal: fatGoal,
         user: req.userData.userId // Associate goal with the authenticated user
     });
 

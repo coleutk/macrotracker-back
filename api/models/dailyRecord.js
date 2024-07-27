@@ -22,8 +22,8 @@ const dailyRecordSchema = mongoose.Schema({
     drinks: [dailyDrinkSchema], // Array of drink entries
     calories: { type: Number, default: 0 },
     protein: { type: Number, default: 0 },
-    carbs: { type: Number, default: 0 },
-    fat: { type: Number, default: 0 },
+    carbs: { type: Number, default: null, required: false },
+    fat: { type: Number, default: null, required: false },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     goal: { // Add goal field here
         calorieGoal: { type: Number, required: true },

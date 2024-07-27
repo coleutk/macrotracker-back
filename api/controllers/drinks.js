@@ -4,7 +4,7 @@ const Drink = require('../models/drink');
 
 exports.drinks_get_all = (req, res, next) => {
     Drink.find({ user: req.userData.userId })
-        .select('_id name volume calories carbs protein fat')
+        .select('_id name volume calories protein carbs fat')
         .exec()
         .then(docs => {
             const response = {
@@ -17,7 +17,8 @@ exports.drinks_get_all = (req, res, next) => {
                         calories: doc.calories,
                         protein: doc.protein,
                         carbs: doc.carbs,
-                        fat: doc.fat
+                        fat: doc.fat,
+                        user: doc.user
                         // request: {
                         //     type: 'GET',
                         //     url: 'http://localhost:3000/drinks/' + doc._id
@@ -46,9 +47,9 @@ exports.drinks_create_drink = (req, res, next) => {
             unit: req.body.volume.unit
         },
         calories: req.body.calories,
-        carbs: req.body.carbs,
         protein: req.body.protein,
-        fat: req.body.fat,
+        carbs: req.body.carbs !== undefined ? req.body.carbs : null,
+        fat: req.body.fat !== undefined ? req.body.fat : null,
         user: req.userData.userId // Associate goal with the authenticated user
     });
 
@@ -133,6 +134,14 @@ exports.drinks_update_drink = (req, res, next) => {
 
     for(const ops of req.body) {
         updateOps[ops.propName] = ops.value;
+    }
+
+    // Handle null values for carbs and fat
+    if (updateOps.hasOwnProperty('carbs') && (updateOps['carbs'] === '' || updateOps['carbs'] === null)) {
+        updateOps['carbs'] = null;
+    }
+    if (updateOps.hasOwnProperty('fat') && (updateOps['fat'] === '' || updateOps['fat'] === null)) {
+        updateOps['fat'] = null;
     }
 
     Drink.updateOne({ _id: id, user: req.userData.userId }, { $set: updateOps })

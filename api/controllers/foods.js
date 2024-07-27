@@ -4,10 +4,10 @@ const Food = require('../models/food');
 
 exports.foods_get_all = (req, res, next) => {
     Food.find({ user: req.userData.userId })
-        .select('_id name weight calories carbs protein fat')
+        .select('_id name weight calories protein carbs fat')
         .exec()
         .then(docs => {
-            console.log(docs);
+            //console.log(docs);
             const response = {
                 count: docs.length,
                 foods: docs.map(doc => {
@@ -48,9 +48,9 @@ exports.foods_create_food = (req, res, next) => {
             unit: req.body.weight.unit
         },
         calories: req.body.calories,
-        carbs: req.body.carbs,
         protein: req.body.protein,
-        fat: req.body.fat,
+        carbs: req.body.carbs !== undefined ? req.body.carbs : null,
+        fat: req.body.fat !== undefined ? req.body.fat : null,
         user: req.userData.userId // Associate goal with the authenticated user
     });
 
@@ -135,6 +135,14 @@ exports.foods_update_food = (req, res, next) => {
 
     for(const ops of req.body) {
         updateOps[ops.propName] = ops.value;
+    }
+
+    // Handle null values for carbs and fat
+    if (updateOps.hasOwnProperty('carbs') && (updateOps['carbs'] === '' || updateOps['carbs'] === null)) {
+        updateOps['carbs'] = null;
+    }
+    if (updateOps.hasOwnProperty('fat') && (updateOps['fat'] === '' || updateOps['fat'] === null)) {
+        updateOps['fat'] = null;
     }
 
     Food.updateOne({ _id: id, user: req.userData.userId }, { $set: updateOps })

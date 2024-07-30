@@ -5,62 +5,69 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Goal = require('../models/goal');
 
-exports.user_signup = (req, res, next) => {
-    User.find({ email: req.body.email })
-        .exec()
-        .then(user => {
-            if (user.length >= 1) {
+const { check, validationResult } = require('express-validator');
+
+// Validation middleware
+const userSignupValidationRules = [
+    check('email').isEmail().withMessage('Please provide a valid email'),
+    check('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters long'),
+    check('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+];
+
+exports.user_signup = [
+    userSignupValidationRules,
+    async (req, res, next) => {
+        // Check for validation errors
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        try {
+            // Check if the email already exists
+            const existingEmailUser = await User.findOne({ email: req.body.email }).exec();
+            if (existingEmailUser) {
                 return res.status(409).json({
                     message: 'E-Mail exists'
                 });
-            } else {
-                return User.find({ username: req.body.username }).exec();
             }
-        })
-        .then(user => {
-            if (user && user.length >= 1) {
+
+            // Check if the username already exists
+            const existingUsernameUser = await User.findOne({ username: req.body.username }).exec();
+            if (existingUsernameUser) {
                 return res.status(409).json({
                     message: 'Username exists'
                 });
-            } else {
-                bcrypt.hash(req.body.password, 10, (err, hash) => {
-                    if (err) {
-                        return res.status(500).json({
-                            error: err
-                        });
-                    } else {
-                        const user = new User({
-                            _id: new mongoose.Types.ObjectId(),
-                            username: req.body.username,
-                            email: req.body.email,
-                            password: hash
-                        });
-
-                        user
-                            .save()
-                            .then(result => {
-                                console.log(result);
-                                res.status(201).json({
-                                    message: 'User created'
-                                });
-                            })
-                            .catch(err => {
-                                console.log(err);
-                                res.status(500).json({
-                                    error: err
-                                });
-                            });
-                    }
-                });
             }
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json({
-                error: err
+
+            // Hash the password
+            const hash = await bcrypt.hash(req.body.password, 10);
+
+            // Create a new user
+            const user = new User({
+                _id: new mongoose.Types.ObjectId(),
+                username: req.body.username,
+                email: req.body.email,
+                password: hash
             });
-        });
-};
+
+            // Save the user to the database
+            const result = await user.save();
+            console.log(result);
+
+            res.status(201).json({
+                message: 'User created'
+            });
+
+        } catch (err) {
+            console.log('Error during user signup:', err);
+            res.status(500).json({
+                error: err.message || 'Internal server error'
+            });
+        }
+    }
+];
+
 
 exports.user_login = (req, res, next) => {
     User.find({email: req.body.email})

@@ -184,20 +184,15 @@ router.post('/completeDay', checkAuth, async (req, res, next) => {
             return res.status(400).json({ message: 'No selected goal found for user' });
         }
 
-        // Fetch the current daily record
         const currentRecord = await DailyRecord.findOne({ user: userId });
         if (!currentRecord) {
             return res.status(404).json({ message: 'No current daily record found' });
         }
 
-        // Get real-time and current daily record dates
-        const realTimeDate = new Date().toISOString().split('T')[0]; // Real-time date
-        const currentRecordDate = currentRecord.date.toISOString().split('T')[0]; // Current daily record date
-
-        // Check if the user is catching up or working on real-time day
+        const realTimeDate = new Date().toISOString().split('T')[0];
+        const currentRecordDate = currentRecord.date.toISOString().split('T')[0];
         const isCatchingUp = new Date(currentRecordDate) < new Date(realTimeDate);
 
-        // Archive the current daily record
         let archivedRecord = await ArchivedRecord.findOne({ user: userId });
         if (!archivedRecord) {
             archivedRecord = new ArchivedRecord({
@@ -207,7 +202,7 @@ router.post('/completeDay', checkAuth, async (req, res, next) => {
         }
 
         const newArchivedRecord = currentRecord.toObject();
-        newArchivedRecord._id = new mongoose.Types.ObjectId(); // New unique ID for archive
+        newArchivedRecord._id = new mongoose.Types.ObjectId();
         newArchivedRecord.goal = {
             calorieGoal: selectedGoal.calorieGoal,
             proteinGoal: selectedGoal.proteinGoal,
@@ -216,15 +211,11 @@ router.post('/completeDay', checkAuth, async (req, res, next) => {
         };
         archivedRecord.records.push(newArchivedRecord);
         await archivedRecord.save();
-
-        // Remove the current daily record from the database
         await DailyRecord.deleteOne({ _id: currentRecord._id });
 
-        // Determine the new daily record's date and locked status
-        const nextDayDate = isCatchingUp ? new Date() : new Date(new Date(currentRecord.date).getTime() + 24 * 60 * 60 * 1000); // Adjust for next day if real-time
+        const nextDayDate = isCatchingUp ? new Date() : new Date(new Date(currentRecord.date).getTime() + 24 * 60 * 60 * 1000);
         const isLocked = !isCatchingUp;
 
-        // Create the new daily record
         const newRecord = new DailyRecord({
             _id: new mongoose.Types.ObjectId(),
             user: userId,
@@ -247,34 +238,38 @@ router.post('/completeDay', checkAuth, async (req, res, next) => {
 
         await newRecord.save();
 
-        // Simulate unlocking the record after 10 seconds for testing
         if (isLocked) {
-            // Calculate the time until midnight in milliseconds
             const currentTime = new Date();
             const midnight = new Date(currentTime);
-            midnight.setHours(24, 0, 0, 0); // Set to midnight of the next day
+            midnight.setHours(24, 0, 0, 0);
             const timeUntilMidnight = midnight - currentTime;
 
-            // Unlock the record at midnight
             setTimeout(async () => {
                 try {
                     const updatedRecord = await DailyRecord.findByIdAndUpdate(
                         newRecord._id,
                         { $set: { locked: false } },
                         { new: true }
-                    );
+                    ).select('-__v');
                     console.log('Daily record unlocked at midnight: ', updatedRecord);
                 } catch (err) {
                     console.error('Error unlocking daily record at midnight:', err);
                 }
-            }, timeUntilMidnight); // Schedule to unlock at midnight
+            }, timeUntilMidnight);
+
+            console.log(timeUntilMidnight);
+
+            res.status(200).json({
+                message: 'Day completed and new daily record created successfully',
+                newRecord: newRecord.toObject({ versionKey: false }), // Exclude __v
+                timeUntilMidnight: isLocked ? timeUntilMidnight : null
+            });
+        } else {
+            res.status(200).json({
+                message: 'Day completed and new daily record created successfully',
+                newRecord
+            });
         }
-
-        res.status(200).json({
-            message: 'Day completed and new daily record created successfully',
-            newRecord
-        });
-
     } catch (err) {
         console.error('Error:', err);
         res.status(500).json({
@@ -282,6 +277,7 @@ router.post('/completeDay', checkAuth, async (req, res, next) => {
         });
     }
 });
+
 
 
 
@@ -624,6 +620,25 @@ router.post('/initializeDailyRecordIfEmpty', checkAuth, async (req, res, next) =
     }
 });
 
+router.post('/unlockCurrentDailyRecord', checkAuth, async (req, res) => {
+    const userId = req.userData.userId;
+
+    try {
+        const dailyRecord = await DailyRecord.findOneAndUpdate(
+            { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
+            { $set: { locked: false } },
+            { new: true }
+        );
+
+        if (!dailyRecord) {
+            return res.status(404).json({ message: 'No current daily record found' });
+        }
+
+        res.status(200).json(dailyRecord);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 
 

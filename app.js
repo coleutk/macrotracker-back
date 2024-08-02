@@ -4,11 +4,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
-const productRoutes = require('./api/routes/products');
-const orderRoutes = require('./api/routes/orders');
 const userRoutes = require('./api/routes/users');
-
-// NEW FOR MACROTRACKER
 const foodRoutes = require('./api/routes/foods');
 const drinkRoutes = require('./api/routes/drinks');
 const goalsRoutes = require('./api/routes/goals');
@@ -49,11 +45,7 @@ app.use((req, res, next) => {
 });
 
 // Routes which should handle requests
-app.use('/products', productRoutes);
-app.use('/orders', orderRoutes);
 app.use('/users', userRoutes);
-
-// NEW FOR MACROTRACKER
 app.use('/foods', foodRoutes);
 app.use('/drinks', drinkRoutes);
 app.use('/goals', goalsRoutes);

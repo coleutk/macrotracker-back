@@ -28,10 +28,4 @@ router.delete('/deleteDrinkInput/:drinkInputId', checkAuth, dailyRecordsControll
 // Delete Manual Entry from Daily Input
 router.delete('/deleteManualInput/:manualInputId', checkAuth, dailyRecordsController.daily_delete_manual_input);
 
-// Automatically Create New Daily Record (If archivedRecords + dailyRecords is Empty)
-router.post('/initializeDailyRecordIfEmpty', checkAuth, dailyRecordsController.daily_initialize_if_empty);
-
-// Unlocks Current Daily Record when Real Time Date Aligns with Locked Day Date
-router.post('/unlockCurrentDailyRecord', checkAuth, dailyRecordsController.daily_unlock_current);
-
 module.exports = router;

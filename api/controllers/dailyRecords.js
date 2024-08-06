@@ -178,10 +178,6 @@ exports.daily_complete_day = async (req, res, next) => {
             return res.status(404).json({ message: 'No current daily record found' });
         }
 
-        const realTimeDate = new Date().toISOString().split('T')[0];
-        const currentRecordDate = currentRecord.date.toISOString().split('T')[0];
-        const isCatchingUp = new Date(currentRecordDate) < new Date(realTimeDate);
-
         let archivedRecord = await ArchivedRecord.findOne({ user: userId });
         if (!archivedRecord) {
             archivedRecord = new ArchivedRecord({
@@ -202,8 +198,8 @@ exports.daily_complete_day = async (req, res, next) => {
         await archivedRecord.save();
         await DailyRecord.deleteOne({ _id: currentRecord._id });
 
-        const nextDayDate = isCatchingUp ? new Date() : new Date(new Date(currentRecord.date).getTime() + 24 * 60 * 60 * 1000);
-        const isLocked = !isCatchingUp;
+        // Calculate the next day date by adding one day to the current record date
+        const nextDayDate = new Date(currentRecord.date.getTime() + 24 * 60 * 60 * 1000);
 
         const newRecord = new DailyRecord({
             _id: new mongoose.Types.ObjectId(),
@@ -221,75 +217,77 @@ exports.daily_complete_day = async (req, res, next) => {
                 proteinGoal: selectedGoal.proteinGoal,
                 carbGoal: selectedGoal.carbGoal,
                 fatGoal: selectedGoal.fatGoal
-            },
-            locked: isLocked
+            }
         });
 
         await newRecord.save();
 
-        if (isLocked) {
-            const currentTime = new Date();
-            const midnight = new Date(currentTime);
-            midnight.setHours(24, 0, 0, 0);
-            const timeUntilMidnight = midnight - currentTime;
+        res.status(200).json({
+            message: 'Day completed and new daily record created successfully',
+            newRecord: newRecord.toObject({ versionKey: false }) // Exclude __v
+        });
 
-            setTimeout(async () => {
-                try {
-                    const updatedRecord = await DailyRecord.findByIdAndUpdate(
-                        newRecord._id,
-                        { $set: { locked: false } },
-                        { new: true }
-                    ).select('-__v');
-                    console.log('Daily record unlocked at midnight: ', updatedRecord);
-                } catch (err) {
-                    console.error('Error unlocking daily record at midnight:', err);
-                }
-            }, timeUntilMidnight);
-
-            console.log(timeUntilMidnight);
-
-            res.status(200).json({
-                message: 'Day completed and new daily record created successfully',
-                newRecord: newRecord.toObject({ versionKey: false }), // Exclude __v
-                timeUntilMidnight: isLocked ? timeUntilMidnight : null
-            });
-        } else {
-            res.status(200).json({
-                message: 'Day completed and new daily record created successfully',
-                newRecord
-            });
-        }
     } catch (err) {
         console.error('Error:', err);
         res.status(500).json({
             error: err.message
         });
     }
-}
+};
 
-exports.daily_get_current_record = (req, res, next) => {
-    const userId = req.userData.userId; // Hardcoded for now
-    
-    DailyRecord.findOne({user: userId})
-        .populate('foods')
-        .populate('drinks')
-        .populate('manuals')
-        .select('_id user date calories protein carbs fat manuals foods drinks locked')
-        .exec()
-        .then(record => {
-            if(!record) {
-                return res.status(404).json({
-                    message: 'No daily record found for today'
-                });
+exports.daily_get_current_record = async (req, res, next) => {
+    const userId = req.userData.userId;
+
+    try {
+        let currentRecord = await DailyRecord.findOne({ user: userId })
+            .populate('foods')
+            .populate('drinks')
+            .populate('manuals')
+            .select('_id user date calories protein carbs fat manuals foods drinks');
+
+        if (!currentRecord) {
+            // Create a new daily record if it doesn't exist
+            const user = await User.findById(userId).populate('selectedGoal');
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
             }
-            res.status(200).json(record);
-        })
-        .catch(err => {
-            res.status(500).json({
-                error: err
-            })
-        });
-}
+
+            const selectedGoal = user.selectedGoal;
+            if (!selectedGoal) {
+                return res.status(400).json({ message: 'No selected goal found for user' });
+            }
+
+            const newRecord = new DailyRecord({
+                _id: new mongoose.Types.ObjectId(),
+                user: userId,
+                date: new Date(),
+                foods: [],
+                drinks: [],
+                manuals: [],
+                calories: 0,
+                protein: 0,
+                carbs: 0,
+                fat: 0,
+                goal: {
+                    calorieGoal: selectedGoal.calorieGoal,
+                    proteinGoal: selectedGoal.proteinGoal,
+                    carbGoal: selectedGoal.carbGoal,
+                    fatGoal: selectedGoal.fatGoal
+                }
+            });
+
+            await newRecord.save();
+            currentRecord = newRecord;
+            console.log('New daily record created: ', newRecord);
+        }
+
+        res.status(200).json(currentRecord);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
 
 exports.daily_delete_food_input = (req, res, next) => {
     const userId = req.userData.userId; // Use the authenticated user's ID
@@ -476,78 +474,4 @@ exports.daily_delete_manual_input = (req, res, next) => {
         console.log('Error processing request', err);
         res.status(500).json({ error: err });
     });
-}
-
-exports.daily_initialize_if_empty = async (req, res, next) => {
-    const userId = req.userData.userId;
-
-    try {
-        const user = await User.findById(userId).populate('selectedGoal');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        const archivedRecord = await ArchivedRecord.findOne({ user: userId });
-        const dailyRecord = await DailyRecord.findOne({ user: userId });
-
-        if (!archivedRecord && !dailyRecord) {
-            const selectedGoal = user.selectedGoal;
-            const currentDate = new Date();
-
-            const newRecord = new DailyRecord({
-                _id: new mongoose.Types.ObjectId(),
-                user: userId,
-                date: currentDate,
-                foods: [],
-                drinks: [],
-                manuals: [],
-                calories: 0,
-                protein: 0,
-                carbs: 0,
-                fat: 0,
-                goal: {
-                    calorieGoal: selectedGoal.calorieGoal,
-                    proteinGoal: selectedGoal.proteinGoal,
-                    carbGoal: selectedGoal.carbGoal,
-                    fatGoal: selectedGoal.fatGoal
-                },
-                locked: false
-            });
-
-            await newRecord.save();
-            console.log('New daily record created: ', newRecord);
-
-            return res.status(201).json({
-                message: 'New daily record created successfully',
-                newRecord: newRecord.toObject()
-            });
-        } else {
-            return res.status(200).json({ message: 'Records already exist' });
-        }
-    } catch (err) {
-        console.error('Error:', err);
-        res.status(500).json({
-            error: err.message
-        });
-    }
-}
-
-exports.daily_unlock_current = async (req, res) => {
-    const userId = req.userData.userId;
-
-    try {
-        const dailyRecord = await DailyRecord.findOneAndUpdate(
-            { user: userId, date: { $gte: new Date().setHours(0, 0, 0, 0) } },
-            { $set: { locked: false } },
-            { new: true }
-        );
-
-        if (!dailyRecord) {
-            return res.status(404).json({ message: 'No current daily record found' });
-        }
-
-        res.status(200).json(dailyRecord);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
 }

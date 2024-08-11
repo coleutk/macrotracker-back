@@ -19,8 +19,8 @@ router.delete('/deleteDrink/:recordId/:drinkInputId', checkAuth, archivedRecords
 // Delete Manual Entry from Archived Record
 router.delete('/deleteManual/:recordId/:manualInputId', checkAuth, archivedRecordsController.archived_delete_manual);
 
-// // Add Food to Archived Record
-// router.post('/addFood/:recordId', checkAuth, archivedRecordsController.archived_add_food);
+// Add Food to Archived Record
+router.post('/addFood/:recordId', checkAuth, archivedRecordsController.archived_add_food);
 
 // // Add Drink to Archived Record
 // router.post('/addDrink/:recordId', checkAuth, archivedRecordsController.archived_add_drink);

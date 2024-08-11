@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const ArchivedRecord = require('../models/archivedRecord'); // Adjust path as needed
+const User = require('../models/user'); // Ensure this line is present
 
 exports.archived_get_all = (req, res, next) => {
     const userId = req.userData.userId; // Hardcoded for now
@@ -167,6 +168,76 @@ function calculateNutritionalTotals(record) {
 
     return totals;
 };
+
+
+exports.archived_add_food = async (req, res, next) => {
+    console.log('Debug: Request received');
+    console.log('Debug: User data from token:', req.userData); // Debug line
+
+    const userId = req.userData.userId;
+    const { recordId } = req.params;
+
+    try {
+        console.log('Debug: Looking for user with ID:', userId); // Debug line
+
+        // Find the user and ensure they exist
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            console.log('Debug: User not found'); // Debug line
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Define the new food item to add
+        const archivedFood = {
+            food: {
+                _id: new mongoose.Types.ObjectId(),
+                name: req.body.name,
+                weight: {
+                    value: req.body.weight.value,
+                    unit: req.body.weight.unit
+                },
+                calories: req.body.calories,
+                protein: req.body.protein,
+                carbs: req.body.carbs,
+                fat: req.body.fat,
+                user: userId
+            },
+            servings: req.body.servings,
+        };
+
+        // Find and update the archived record
+        const updatedRecord = await ArchivedRecord.findOneAndUpdate(
+            { user: userId, "records._id": recordId },
+            {
+                $push: { "records.$.foods": archivedFood },
+                $inc: {
+                    "records.$.calories": archivedFood.food.calories,
+                    "records.$.protein": archivedFood.food.protein,
+                    "records.$.carbs": archivedFood.food.carbs,
+                    "records.$.fat": archivedFood.food.fat
+                }
+            },
+            { new: true }
+        );
+
+        // Check if the record was found and updated
+        if (!updatedRecord) {
+            console.log('Debug: Archived record not found'); // Debug line
+            return res.status(404).json({ message: 'Archived record not found' });
+        }
+
+        console.log('Debug: Updated record:', updatedRecord); // Debug line
+
+        // Respond with the updated archived record
+        res.status(200).json({ updatedRecord });
+    } catch (err) {
+        console.error('Debug: Error in archived_add_food:', err); // Debug line
+        res.status(500).json({ error: err.message });
+    }
+};
+
+
+
 
 
 

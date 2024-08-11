@@ -75,6 +75,70 @@ exports.archived_delete_food = async (req, res) => {
     }
 };
 
+exports.archived_delete_drink = async (req, res) => {
+    const userId = req.userData.userId;
+    const { recordId, drinkInputId } = req.params;
+
+    try {
+        const result = await ArchivedRecord.findOneAndUpdate(
+            { user: userId, "records._id": recordId },
+            { $pull: { "records.$.drinks": { _id: drinkInputId } } },
+            { new: true }
+        );
+
+        if (result) {
+            // Recalculate nutritional totals
+            const record = result.records.id(recordId);
+            const updatedTotals = calculateNutritionalTotals(record);
+
+            record.calories = updatedTotals.calories;
+            record.protein = updatedTotals.protein;
+            record.carbs = updatedTotals.carbs;
+            record.fat = updatedTotals.fat;
+
+            await result.save();
+
+            res.status(200).json({ message: 'Drink entry deleted successfully', updatedRecord: record });
+        } else {
+            res.status(404).json({ message: 'No record found for the given ID' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.archived_delete_manual = async (req, res) => {
+    const userId = req.userData.userId;
+    const { recordId, manualInputId } = req.params;
+
+    try {
+        const result = await ArchivedRecord.findOneAndUpdate(
+            { user: userId, "records._id": recordId },
+            { $pull: { "records.$.manuals": { _id: manualInputId } } },
+            { new: true }
+        );
+
+        if (result) {
+            // Recalculate nutritional totals
+            const record = result.records.id(recordId);
+            const updatedTotals = calculateNutritionalTotals(record);
+
+            record.calories = updatedTotals.calories;
+            record.protein = updatedTotals.protein;
+            record.carbs = updatedTotals.carbs;
+            record.fat = updatedTotals.fat;
+
+            await result.save();
+
+            res.status(200).json({ message: 'Manual entry deleted successfully', updatedRecord: record });
+        } else {
+            res.status(404).json({ message: 'No record found for the given ID' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // Function to calculate nutritional totals
 function calculateNutritionalTotals(record) {
     let totals = record.foods.reduce((totals, food) => {
@@ -102,7 +166,7 @@ function calculateNutritionalTotals(record) {
     }, totals);
 
     return totals;
-}
+};
 
 
 
@@ -133,4 +197,4 @@ exports.archived_delete_record = async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};

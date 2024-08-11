@@ -13,11 +13,11 @@ router.get('/:recordId', checkAuth, archivedRecordsController.archived_get_recor
 // Delete Food from Archived Record
 router.delete('/deleteFood/:recordId/:foodInputId', checkAuth, archivedRecordsController.archived_delete_food);
 
-// // Delete Drink from Archived Record
-// router.delete('/deleteDrink/:recordId/:drinkInputId', checkAuth, archivedRecordsController.archived_delete_drink);
+// Delete Drink from Archived Record
+router.delete('/deleteDrink/:recordId/:drinkInputId', checkAuth, archivedRecordsController.archived_delete_drink);
 
-// // Delete Manual Entry from Archived Record
-// router.delete('/deleteManual/:recordId/:manualInputId', checkAuth, archivedRecordsController.archived_delete_manual);
+// Delete Manual Entry from Archived Record
+router.delete('/deleteManual/:recordId/:manualInputId', checkAuth, archivedRecordsController.archived_delete_manual);
 
 // // Add Food to Archived Record
 // router.post('/addFood/:recordId', checkAuth, archivedRecordsController.archived_add_food);

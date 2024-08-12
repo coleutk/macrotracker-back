@@ -171,9 +171,6 @@ function calculateNutritionalTotals(record) {
 
 
 exports.archived_add_food = async (req, res, next) => {
-    console.log('Debug: Request received');
-    console.log('Debug: User data from token:', req.userData); // Debug line
-
     const userId = req.userData.userId;
     const { recordId } = req.params;
 
@@ -237,9 +234,124 @@ exports.archived_add_food = async (req, res, next) => {
 };
 
 
+exports.archived_add_drink = async (req, res, next) => {
+    const userId = req.userData.userId;
+    const { recordId } = req.params;
+
+    try {
+        console.log('Debug: Looking for user with ID:', userId); // Debug line
+
+        // Find the user and ensure they exist
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            console.log('Debug: User not found'); // Debug line
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Define the new food item to add
+        const archivedDrink = {
+            drink: {
+                _id: new mongoose.Types.ObjectId(),
+                name: req.body.name,
+                volume: {
+                    value: req.body.volume.value,
+                    unit: req.body.volume.unit
+                },
+                calories: req.body.calories,
+                protein: req.body.protein,
+                carbs: req.body.carbs,
+                fat: req.body.fat,
+                user: userId
+            },
+            servings: req.body.servings,
+        };
+
+        // Find and update the archived record
+        const updatedRecord = await ArchivedRecord.findOneAndUpdate(
+            { user: userId, "records._id": recordId },
+            {
+                $push: { "records.$.drinks": archivedDrink },
+                $inc: {
+                    "records.$.calories": archivedDrink.drink.calories,
+                    "records.$.protein": archivedDrink.drink.protein,
+                    "records.$.carbs": archivedDrink.drink.carbs,
+                    "records.$.fat": archivedDrink.drink.fat
+                }
+            },
+            { new: true }
+        );
+
+        // Check if the record was found and updated
+        if (!updatedRecord) {
+            console.log('Debug: Archived record not found'); // Debug line
+            return res.status(404).json({ message: 'Archived record not found' });
+        }
+
+        console.log('Debug: Updated record:', updatedRecord); // Debug line
+
+        // Respond with the updated archived record
+        res.status(200).json({ updatedRecord });
+    } catch (err) {
+        console.error('Debug: Error in archived_add_drink:', err); // Debug line
+        res.status(500).json({ error: err.message });
+    }
+};
 
 
+exports.archived_add_manual = async (req, res, next) => {
+    const userId = req.userData.userId;
+    const { recordId } = req.params;
 
+    try {
+        console.log('Debug: Looking for user with ID:', userId); // Debug line
+
+        // Find the user and ensure they exist
+        const user = await User.findById(userId).populate('selectedGoal');
+        if (!user) {
+            console.log('Debug: User not found'); // Debug line
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Define the new food item to add
+        const archivedManual = {
+            _id: new mongoose.Types.ObjectId(),
+            calories: req.body.calories,
+            protein: req.body.protein,
+            carbs: req.body.carbs,
+            fat: req.body.fat,
+            user: userId
+        };
+
+        // Find and update the archived record
+        const updatedRecord = await ArchivedRecord.findOneAndUpdate(
+            { user: userId, "records._id": recordId },
+            {
+                $push: { "records.$.manuals": archivedManual },
+                $inc: {
+                    "records.$.calories": archivedManual.calories,
+                    "records.$.protein": archivedManual.protein,
+                    "records.$.carbs": archivedManual.carbs,
+                    "records.$.fat": archivedManual.fat
+                }
+            },
+            { new: true }
+        );
+
+        // Check if the record was found and updated
+        if (!updatedRecord) {
+            console.log('Debug: Archived record not found'); // Debug line
+            return res.status(404).json({ message: 'Archived record not found' });
+        }
+
+        console.log('Debug: Updated record:', updatedRecord); // Debug line
+
+        // Respond with the updated archived record
+        res.status(200).json({ updatedRecord });
+    } catch (err) {
+        console.error('Debug: Error in archived_add_manual:', err); // Debug line
+        res.status(500).json({ error: err.message });
+    }
+};
 
 exports.archived_delete_record = async (req, res) => {
     const userId = req.userData.userId;

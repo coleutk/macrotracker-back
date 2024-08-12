@@ -22,11 +22,11 @@ router.delete('/deleteManual/:recordId/:manualInputId', checkAuth, archivedRecor
 // Add Food to Archived Record
 router.post('/addFood/:recordId', checkAuth, archivedRecordsController.archived_add_food);
 
-// // Add Drink to Archived Record
-// router.post('/addDrink/:recordId', checkAuth, archivedRecordsController.archived_add_drink);
+// Add Drink to Archived Record
+router.post('/addDrink/:recordId', checkAuth, archivedRecordsController.archived_add_drink);
 
-// // Add Manual Entry to Archived Record
-// router.post('/addManual/:recordId', checkAuth, archivedRecordsController.archived_add_manual);
+// Add Manual Entry to Archived Record
+router.post('/addManual/:recordId', checkAuth, archivedRecordsController.archived_add_manual);
 
 // Delete Specified Archived Record
 router.delete('/deleteArchivedRecord', checkAuth, archivedRecordsController.archived_delete_record);

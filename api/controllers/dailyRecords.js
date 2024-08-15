@@ -245,7 +245,10 @@ exports.daily_get_current_record = async (req, res, next) => {
             .populate('manuals')
             .select('_id user date calories protein carbs fat manuals foods drinks');
 
-        if (!currentRecord) {
+        // Check if archivedRecords exists for the user and whether it has any records
+        const archivedRecord = await ArchivedRecord.findOne({ user: userId });
+
+        if (!currentRecord && !archivedRecord) {
             // Create a new daily record if it doesn't exist
             const user = await User.findById(userId).populate('selectedGoal');
             if (!user) {

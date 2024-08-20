@@ -148,7 +148,9 @@ exports.foods_update_food = (req, res, next) => {
     Food.updateOne({ _id: id, user: req.userData.userId }, { $set: updateOps })
         .exec()
         .then(result => {
-            res.status(200).json({});
+            res.status(200).json({
+                message: 'Attribute updated'
+            });
         })
         .catch(err => {
             console.log(err);

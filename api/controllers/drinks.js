@@ -148,8 +148,7 @@ exports.drinks_update_drink = (req, res, next) => {
         .exec()
         .then(result => {
             res.status(200).json({
-                message: 'Attribute updated',
-                url: 'http://localhost:3000/drinks/' + id
+                message: 'Attribute updated'
             });
         })
         .catch(err => {

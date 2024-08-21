@@ -9,7 +9,7 @@ router.post('/signup', UserController.user_signup);
 
 router.post('/login', UserController.user_login);
 
-router.delete('/:userId', checkAuth, UserController.user_delete);
+router.delete('/deleteUser', checkAuth, UserController.user_delete);
 
 router.get('/me', checkAuth, UserController.get_user_details);
 

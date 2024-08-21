@@ -116,7 +116,11 @@ exports.user_login = (req, res, next) => {
 }
 
 exports.user_delete = (req, res, next) => {
-    User.deleteOne({_id: req.params.userId})
+    // Extract userId from the authenticated user data
+    const userId = req.userData.userId;
+
+    // Use the userId to delete the user
+    User.deleteOne({_id: userId})
         .exec()
         .then(result => {
             res.status(200).json({

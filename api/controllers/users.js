@@ -7,7 +7,7 @@ const Goal = require('../models/goal');
 
 const { check, validationResult } = require('express-validator');
 
-const passwordValidationRule = check('newPassword')
+const passwordValidationRule = check('password')
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long');
 
@@ -71,6 +71,7 @@ exports.user_signup = [
         }
     }
 ];
+
 
 
 exports.user_login = (req, res, next) => {
